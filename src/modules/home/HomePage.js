@@ -1,10 +1,10 @@
 import React from 'react';
-import { ScrollView, View, FlatList, Text } from 'react-native';
+import { ScrollView, View, FlatList, Text, TouchableOpacity } from 'react-native';
 import { homeStyles } from '../../styles/homeStyles';
 import Layout from '../components/Layout';
 import { MandalProfileCard, PostCard } from './components';
 
-export default function HomePage({ selectedTab, onTabChange }) {
+export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDashboard }) {
 
   // Sample Mandal profiles datanpx react-native start --reset-cache
 
@@ -83,6 +83,21 @@ export default function HomePage({ selectedTab, onTabChange }) {
             showsHorizontalScrollIndicator={false}
             // contentContainerStyle={homeStyles.mandalProfilesList}
           />
+        </View>
+        
+        <View>
+          <TouchableOpacity
+            onPress={() => {
+              if (onNavigateToAdminDashboard) {
+                onNavigateToAdminDashboard();
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827', paddingHorizontal: 16, paddingVertical: 12 }}>
+              Latest Events
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Posts Feed */}

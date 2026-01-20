@@ -17,6 +17,7 @@ import {
   BankDetailsScreen,
   MandalCreatedScreen,
 } from './src/modules/mandal';
+import { AdminDashboard } from './src/modules/mandalDetails';
 import { MainNavigator } from './src/modules/components';
 import { StorageService } from './src/utils/storage';
 
@@ -220,7 +221,22 @@ function App() {
           }}
         />
       )}
-      {screen === 'homepage' && <MainNavigator />}
+      {screen === 'homepage' && (
+        <MainNavigator
+          onNavigateToAdminDashboard={async () => {
+            await StorageService.setLastScreen('admin-dashboard');
+            setScreen('admin-dashboard');
+          }}
+        />
+      )}
+      {screen === 'admin-dashboard' && (
+        <AdminDashboard
+          onBack={async () => {
+            await StorageService.setLastScreen('homepage');
+            setScreen('homepage');
+          }}
+        />
+      )}
     </SafeAreaProvider>
   );
 }

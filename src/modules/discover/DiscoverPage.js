@@ -3,7 +3,7 @@ import { ScrollView, Text, View, TextInput, TouchableOpacity, FlatList, Activity
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Layout from '../components/Layout';
 import { homeStyles } from '../../styles/homeStyles';
-import { DiscoverListItem, DiscoverFeaturedBanner, MandalResultItem, PersonResultItem } from './components';
+import { DiscoverListItem, DiscoverFeaturedBanner, MandalResultItem, PersonResultItem, DiscoverSearch } from './components';
 import { PostCard } from '../home/components';
 import { ViewAllLink } from '../../components';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -17,7 +17,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Advanced filter state - supports different filter types for different categories
   const [advancedFilters, setAdvancedFilters] = useState({
     location: null,
@@ -25,14 +25,14 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
     category: null,
     date: null, // For posts
   });
-  
+
   // Search Filters Modal state
   const [showSearchFiltersModal, setShowSearchFiltersModal] = useState(false);
   const [locationSearchQuery, setLocationSearchQuery] = useState('');
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [selectedSort, setSelectedSort] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
-  
+
   // Location suggestions based on search
   const locationSuggestions = useMemo(() => {
     const allLocations = [
@@ -44,17 +44,17 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
       'Vartak Nagar, Thane',
       'Sasani Vihar, Thane',
     ];
-    
+
     if (!locationSearchQuery.trim()) {
       return allLocations;
     }
-    
+
     const query = locationSearchQuery.toLowerCase();
-    return allLocations.filter(loc => 
+    return allLocations.filter(loc =>
       loc.toLowerCase().includes(query)
     );
   }, [locationSearchQuery]);
-  
+
   const sortOptions = ['A - Z', 'Z - A', 'Nearest First'];
   const categoryOptions = ['Sports', 'Music', 'Cultural'];
 
@@ -273,7 +273,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
     setSelectedCategories([]);
     setLocationSearchQuery('');
   }, [selectedFilter]);
-  
+
   // Update modal filters when modal opens to reflect current advanced filters
   useEffect(() => {
     if (showSearchFiltersModal && advancedFilters.location) {
@@ -304,12 +304,12 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
       (mandal.name && mandal.name.toLowerCase().includes(query)) ||
       (mandal.location && mandal.location.toLowerCase().includes(query))
     );
-    
+
     // Apply advanced filters if Mandals filter is selected
     if (selectedFilter === 'Mandals') {
       // Advanced filters applied via modal
     }
-    
+
     return filtered;
   }, [debouncedSearchQuery, selectedFilter, advancedFilters]);
 
@@ -320,12 +320,12 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
       (person.name && person.name.toLowerCase().includes(query)) ||
       (person.location && person.location.toLowerCase().includes(query))
     );
-    
+
     // Apply advanced filters if People filter is selected
     if (selectedFilter === 'People') {
       // Add People-specific filters if needed
     }
-    
+
     return filtered;
   }, [debouncedSearchQuery, selectedFilter, advancedFilters]);
 
@@ -343,12 +343,12 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
       (post.title && post.title.toLowerCase().includes(query)) ||
       (post.description && post.description.toLowerCase().includes(query))
     );
-    
+
     // Apply advanced filters if Posts filter is selected
     if (selectedFilter === 'Posts') {
       // Advanced filters applied via modal
     }
-    
+
     return filtered;
   }, [debouncedSearchQuery, selectedFilter, advancedFilters]);
 
@@ -359,14 +359,14 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
     let filtered = allPosts.filter(post =>
       post.category === 'Academies' &&
       ((post.title && post.title.toLowerCase().includes(query)) ||
-      (post.description && post.description.toLowerCase().includes(query)))
+        (post.description && post.description.toLowerCase().includes(query)))
     );
-    
+
     // Apply advanced filters if Academies filter is selected
     if (selectedFilter === 'Academies') {
       // Advanced filters applied via modal
     }
-    
+
     return filtered;
   }, [debouncedSearchQuery, selectedFilter, advancedFilters]);
 
@@ -377,14 +377,14 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
     let filtered = allPosts.filter(post =>
       post.category === 'Vendors' &&
       ((post.title && post.title.toLowerCase().includes(query)) ||
-      (post.description && post.description.toLowerCase().includes(query)))
+        (post.description && post.description.toLowerCase().includes(query)))
     );
-    
+
     // Apply advanced filters if Vendors filter is selected
     if (selectedFilter === 'Vendors') {
       // Advanced filters applied via modal
     }
-    
+
     return filtered;
   }, [debouncedSearchQuery, selectedFilter, advancedFilters]);
 
@@ -395,14 +395,14 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
     let filtered = allPosts.filter(post =>
       post.category === 'NGOs' &&
       ((post.title && post.title.toLowerCase().includes(query)) ||
-      (post.description && post.description.toLowerCase().includes(query)))
+        (post.description && post.description.toLowerCase().includes(query)))
     );
-    
+
     // Apply advanced filters if NGOs filter is selected
     if (selectedFilter === 'NGOs') {
       // Advanced filters applied via modal
     }
-    
+
     return filtered;
   }, [debouncedSearchQuery, selectedFilter, advancedFilters]);
 
@@ -410,7 +410,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
   const showFilteredFeed = !showSearchResults && selectedFilter;
 
   const renderDiscoverPost = ({ item }) => <DiscoverListItem item={item} />;
-  
+
   // Helper function to render advanced filters based on selected filter type
   const renderAdvancedFilters = () => {
     // No advanced filter chips to show - all filters are in the modal
@@ -431,19 +431,14 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
         <View style={homeStyles.discoverContainer}>
           {/* Search & filters */}
           <View style={homeStyles.discoverSearchContainer}>
-            <View style={homeStyles.discoverSearchBox}>
-              <TextInput
-                placeholder="Search"
-                placeholderTextColor="#9ca3af"
-                style={homeStyles.discoverSearchInput}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              <Icon name="search" size={24} color="#6b7280" />
-            </View>
+            <DiscoverSearch
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search"
+            />
 
             <View style={homeStyles.discoverFiltersRow}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={homeStyles.discoverFilterTuneButton}
                 onPress={() => setShowSearchFiltersModal(true)}
               >
@@ -456,26 +451,26 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                 contentContainerStyle={{ alignItems: 'center' }}
                 style={{ flex: 1 }}
               >
-              {filterOptions.map((filter) => (
-                <TouchableOpacity
-                  key={filter}
-                  style={[
-                    homeStyles.discoverFilterChip,
+                {filterOptions.map((filter) => (
+                  <TouchableOpacity
+                    key={filter}
+                    style={[
+                      homeStyles.discoverFilterChip,
                       selectedFilter === filter && homeStyles.discoverFilterChipActive,
-                  ]}
+                    ]}
                     onPress={() => setSelectedFilter(selectedFilter === filter ? null : filter)}
-                >
-                  <Text
-                    style={
-                      selectedFilter === filter
-                        ? homeStyles.discoverFilterTextActive
-                        : homeStyles.discoverFilterText
-                    }
                   >
-                    {filter}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={
+                        selectedFilter === filter
+                          ? homeStyles.discoverFilterTextActive
+                          : homeStyles.discoverFilterText
+                      }
+                    >
+                      {filter}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </ScrollView>
             </View>
           </View>
@@ -683,39 +678,41 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
           ) : (
             // Normal Discover Feed View
             <>
-          {/* Top announcement */}
-          <View style={homeStyles.discoverAnnouncement}>
-            <Text style={homeStyles.discoverAnnouncementTitle}>
-              {featuredEvent.announcement}
-            </Text>
-            <View style={homeStyles.eventTag}>
-              <Text style={homeStyles.eventTagText}>{featuredEvent.subtitle}</Text>
-            </View>
-          </View>
+              {/* Top announcement */}
+              <View style={{ borderBottomWidth: 1, borderBottomColor: '#e5e7eb' }}>
+                <View style={homeStyles.discoverAnnouncement}>
+                  <Text style={homeStyles.discoverAnnouncementTitle}>
+                    {featuredEvent.announcement}
+                  </Text>
+                  <View style={homeStyles.eventTag}>
+                    <Text style={homeStyles.eventTagText}>{featuredEvent.subtitle}</Text>
+                  </View>
+                </View>
 
-          {/* Featured festival banner */}
-          <DiscoverFeaturedBanner featuredEvent={featuredEvent} />
+                {/* Featured festival banner */}
+                <DiscoverFeaturedBanner featuredEvent={featuredEvent} />
+              </View>
 
-          {/* Discover feed list */}
+              {/* Discover feed list */}
               {(showFilteredFeed || !selectedFilter) && (
-          <View style={homeStyles.discoverFeedSection}>
-            <FlatList
-              data={filteredPosts}
-              renderItem={renderDiscoverPost}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-            />
-          </View>
+                <View style={homeStyles.discoverFeedSection}>
+                  <FlatList
+                    data={filteredPosts}
+                    renderItem={renderDiscoverPost}
+                    keyExtractor={(item) => item.id}
+                    scrollEnabled={false}
+                  />
+                </View>
               )}
-          {/* Ganesh Visarjan event card at the bottom */}
+              {/* Ganesh Visarjan event card at the bottom */}
               {!selectedFilter && (
-          <PostCard item={ganeshEventPost} hideHeader={true} hideJoinButton={true} hideActions={true} />
+                <PostCard item={ganeshEventPost} hideHeader={true} hideJoinButton={true} hideActions={true} />
               )}
             </>
           )}
         </View>
       </ScrollView>
-      
+
       {/* Search Filters Modal */}
       <Modal
         visible={showSearchFiltersModal}
@@ -724,22 +721,22 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
         onRequestClose={() => setShowSearchFiltersModal(false)}
       >
         <View style={homeStyles.searchFiltersModalOverlay}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={homeStyles.searchFiltersModalBackdrop}
             activeOpacity={1}
             onPress={() => setShowSearchFiltersModal(false)}
           />
           <View style={homeStyles.searchFiltersModalContent}>
             <Text style={homeStyles.searchFiltersModalTitle}>Search Filters</Text>
-            
-            <ScrollView 
+
+            <ScrollView
               style={homeStyles.searchFiltersScrollView}
               showsVerticalScrollIndicator={false}
             >
               {/* Location Section */}
               <View style={homeStyles.searchFiltersSection}>
                 <Text style={homeStyles.searchFiltersSectionTitle}>Location</Text>
-                
+
                 <View style={homeStyles.searchFiltersLocationInputContainer}>
                   <TextInput
                     style={homeStyles.searchFiltersLocationInput}
@@ -750,8 +747,8 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                   />
                   <Icon name="search" size={20} color="#6b7280" />
                 </View>
-                
-                <TouchableOpacity 
+
+                <TouchableOpacity
                   style={homeStyles.currentLocationButton}
                   onPress={() => {
                     const currentLocation = 'Your Current Location';
@@ -763,7 +760,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                   <Icon name="my-location" size={20} color={PURPLE} />
                   <Text style={homeStyles.currentLocationButtonText}>Your Current Location</Text>
                 </TouchableOpacity>
-                
+
                 {/* Selected Locations Tags */}
                 {selectedLocations.length > 0 && (
                   <View style={homeStyles.selectedLocationsContainer}>
@@ -781,7 +778,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                     ))}
                   </View>
                 )}
-                
+
                 {/* Location Suggestions */}
                 {locationSearchQuery.trim() && locationSuggestions.length > 0 && (
                   <View style={homeStyles.locationSuggestionsContainer}>
@@ -803,7 +800,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                   </View>
                 )}
               </View>
-              
+
               {/* Sort Section */}
               <View style={homeStyles.searchFiltersSection}>
                 <Text style={homeStyles.searchFiltersSectionTitle}>Sort</Text>
@@ -820,7 +817,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                   </TouchableOpacity>
                 ))}
               </View>
-              
+
               {/* Categories Section */}
               <View style={homeStyles.searchFiltersSection}>
                 <Text style={homeStyles.searchFiltersSectionTitle}>Categories</Text>
@@ -829,8 +826,8 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                     key={category}
                     style={homeStyles.searchFilterOption}
                     onPress={() => {
-                      setSelectedCategories(prev => 
-                        prev.includes(category) 
+                      setSelectedCategories(prev =>
+                        prev.includes(category)
                           ? prev.filter(c => c !== category)
                           : [...prev, category]
                       );
@@ -844,7 +841,7 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                 ))}
               </View>
             </ScrollView>
-            
+
             {/* Modal Actions */}
             <View style={homeStyles.searchFiltersModalActions}>
               <TouchableOpacity
@@ -871,10 +868,10 @@ export default function DiscoverPage({ selectedTab, onTabChange }) {
                       location: null,
                     }));
                   }
-                  
+
                   // Apply sort and categories if needed
                   // You can extend this based on your filtering logic
-                  
+
                   setShowSearchFiltersModal(false);
                 }}
               >

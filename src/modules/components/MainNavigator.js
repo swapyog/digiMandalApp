@@ -5,13 +5,19 @@ import { CreatePage } from '../create';
 import { EventsPage } from '../events';
 import { ProfilePage } from '../profile';
 
-export default function MainNavigator() {
+export default function MainNavigator({ onNavigateToAdminDashboard }) {
   const [selectedTab, setSelectedTab] = useState('home');
 
   const renderPage = () => {
     switch (selectedTab) {
       case 'home':
-        return <HomePage selectedTab={selectedTab} onTabChange={setSelectedTab} />;
+        return (
+          <HomePage
+            selectedTab={selectedTab}
+            onTabChange={setSelectedTab}
+            onNavigateToAdminDashboard={onNavigateToAdminDashboard}
+          />
+        );
       case 'discover':
         return <DiscoverPage selectedTab={selectedTab} onTabChange={setSelectedTab} />;
       case 'create':
@@ -21,7 +27,13 @@ export default function MainNavigator() {
       case 'profile':
         return <ProfilePage selectedTab={selectedTab} onTabChange={setSelectedTab} />;
       default:
-        return <HomePage selectedTab={selectedTab} onTabChange={setSelectedTab} />;
+        return (
+          <HomePage
+            selectedTab={selectedTab}
+            onTabChange={setSelectedTab}
+            onNavigateToAdminDashboard={onNavigateToAdminDashboard}
+          />
+        );
     }
   };
 
