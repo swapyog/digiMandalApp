@@ -4,7 +4,7 @@ import { homeStyles } from '../../styles/homeStyles';
 import Layout from '../components/Layout';
 import { MandalProfileCard, PostCard } from './components';
 
-export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDashboard }) {
+export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDashboard, onNavigateToMemberDashboard }) {
 
   // Sample Mandal profiles datanpx react-native start --reset-cache
 
@@ -85,7 +85,7 @@ export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDa
           />
         </View>
         
-        <View>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
           <TouchableOpacity
             onPress={() => {
               if (onNavigateToAdminDashboard) {
@@ -93,9 +93,36 @@ export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDa
               }
             }}
             activeOpacity={0.7}
+            style={{
+              padding: 16,
+              backgroundColor: '#F6F2FC',
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+            }}
           >
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827', paddingHorizontal: 16, paddingVertical: 12 }}>
-              Latest Events
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>
+              Admin Dashboard
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={() => {
+              if (onNavigateToMemberDashboard) {
+                onNavigateToMemberDashboard();
+              }
+            }}
+            activeOpacity={0.7}
+            style={{
+              padding: 16,
+              backgroundColor: '#F6F2FC',
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>
+              Members Dashboard
             </Text>
           </TouchableOpacity>
         </View>

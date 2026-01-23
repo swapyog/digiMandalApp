@@ -17,7 +17,7 @@ import {
   BankDetailsScreen,
   MandalCreatedScreen,
 } from './src/modules/mandal';
-import { AdminDashboard } from './src/modules/mandalDetails';
+import { AdminDashboard, DonationsPage, MemberDashboard } from './src/modules/mandalDetails';
 import { MainNavigator } from './src/modules/components';
 import { StorageService } from './src/utils/storage';
 
@@ -227,10 +227,34 @@ function App() {
             await StorageService.setLastScreen('admin-dashboard');
             setScreen('admin-dashboard');
           }}
+          onNavigateToMemberDashboard={async () => {
+            await StorageService.setLastScreen('member-dashboard');
+            setScreen('member-dashboard');
+          }}
         />
       )}
       {screen === 'admin-dashboard' && (
         <AdminDashboard
+          onBack={async () => {
+            await StorageService.setLastScreen('homepage');
+            setScreen('homepage');
+          }}
+          onNavigateToDonations={async () => {
+            await StorageService.setLastScreen('donations');
+            setScreen('donations');
+          }}
+        />
+      )}
+      {screen === 'donations' && (
+        <DonationsPage
+          onBack={async () => {
+            await StorageService.setLastScreen('admin-dashboard');
+            setScreen('admin-dashboard');
+          }}
+        />
+      )}
+      {screen === 'member-dashboard' && (
+        <MemberDashboard
           onBack={async () => {
             await StorageService.setLastScreen('homepage');
             setScreen('homepage');

@@ -1,2 +1,3 @@
-export { default as AdminDashboard } from './AdminDashboard';
+export { AdminDashboard, DonationsPage } from './admin';
+export { MemberDashboard } from './member';
 

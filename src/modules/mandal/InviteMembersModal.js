@@ -1,25 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../styles/appStyles';
 // Import contacts module (autolinked native module)
 import Contacts from 'react-native-contacts';
 
-export default function InviteMembersModal({ visible, onClose, selectedMembers, onChangeSelected }) {
+export default function InviteMembersModal({ visible, onClose, selectedMembers, onChangeSelected, onAddMembers }) {
   const [search, setSearch] = useState('');
   const [contacts, setContacts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
 
-  useEffect(() => {
-    if (visible) {
-      loadContacts();
-    } else {
-      setSearch('');
-    }
-  }, [visible]);
-
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -37,9 +29,59 @@ export default function InviteMembersModal({ visible, onClose, selectedMembers, 
         return;
       }
 
-      // Directly try to fetch contacts. On iOS this will trigger the system permission prompt.
-      setHasPermission(true);
+      // Check and request permission first
+      let permissionStatus;
+      try {
+        permissionStatus = await Contacts.checkPermission();
+      } catch (checkError) {
+        console.warn('Error checking permission:', checkError);
+        // If checkPermission fails, try requesting permission directly
+        try {
+          permissionStatus = await Contacts.requestPermission();
+        } catch (requestError) {
+          console.error('Error requesting permission:', requestError);
+          setHasPermission(false);
+          setContacts([]);
+          setLoading(false);
+          Alert.alert(
+            'Permission Required',
+            'Contacts permission is required to invite members. Please grant permission in your device settings.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      }
+      
+      if (permissionStatus === 'undefined' || permissionStatus === 'denied') {
+        try {
+          permissionStatus = await Contacts.requestPermission();
+        } catch (requestError) {
+          console.error('Error requesting permission:', requestError);
+          setHasPermission(false);
+          setContacts([]);
+          setLoading(false);
+          Alert.alert(
+            'Permission Required',
+            'Contacts permission is required to invite members. Please grant permission in your device settings.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      }
 
+      if (permissionStatus !== 'authorized') {
+        setHasPermission(false);
+        setContacts([]);
+        setLoading(false);
+        Alert.alert(
+          'Permission Required',
+          'Contacts permission is required to invite members. Please grant permission in your device settings.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      setHasPermission(true);
       const allContacts = await Contacts.getAll();
 
       if (!allContacts || allContacts.length === 0) {
@@ -79,11 +121,18 @@ export default function InviteMembersModal({ visible, onClose, selectedMembers, 
       if (message.toLowerCase().includes('denied') || message.toLowerCase().includes('permission')) {
         setHasPermission(false);
         setContacts([]);
+        setLoading(false);
+        Alert.alert(
+          'Permission Denied',
+          'Contacts permission is required to invite members. Please grant permission in your device settings.',
+          [{ text: 'OK' }]
+        );
         return;
       }
 
       setHasPermission(false);
       setContacts([]);
+      setLoading(false);
       Alert.alert('Error', `Failed to load contacts: ${message || 'Unknown error'}. Please try again.`, [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Retry', onPress: loadContacts },
@@ -91,7 +140,15 @@ export default function InviteMembersModal({ visible, onClose, selectedMembers, 
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (visible) {
+      loadContacts();
+    } else {
+      setSearch('');
+    }
+  }, [visible, loadContacts]);
 
   const filteredContacts = useMemo(() => {
     if (!search.trim()) {
@@ -252,7 +309,12 @@ export default function InviteMembersModal({ visible, onClose, selectedMembers, 
               !canAdd && styles.inviteFooterButtonDisabled,
             ]}
             disabled={!canAdd}
-            onPress={onClose}
+            onPress={() => {
+              if (onAddMembers) {
+                onAddMembers(selectedMembers);
+              }
+              onClose();
+            }}
           >
             <Text style={styles.inviteFooterButtonText}>Add Members</Text>
           </TouchableOpacity>

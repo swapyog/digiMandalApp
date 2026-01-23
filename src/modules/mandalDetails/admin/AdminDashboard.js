@@ -9,11 +9,12 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { adminDashboardStyles } from '../../styles/adminDashboardStyles';
+import { adminDashboardStyles } from '../../../styles/adminDashboardStyles';
+import MandalHeader from '../components/MandalHeader';
 
 const PURPLE = '#7E48DC';
 
-export default function AdminDashboard({ onBack }) {
+export default function AdminDashboard({ onBack, onNavigateToDonations }) {
   // Sample mandal data
   const mandalData = {
     logo: 'https://www.marathidesigns.com/storage/ganpati-logo-design-psd-1.webp',
@@ -40,14 +41,14 @@ export default function AdminDashboard({ onBack }) {
 
   // Sample gallery images
   const galleryImages = [
-    { id: '1', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-    { id: '2', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-    { id: '3', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-    { id: '4', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-    { id: '5', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-    { id: '6', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-    { id: '7', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-    { id: '8', uri: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
+    { id: '1', uri: 'https://i.pinimg.com/736x/48/07/a3/4807a3c7399db01305c85ed3f4e24f38.jpg' },
+    { id: '2', uri: 'https://i.pinimg.com/736x/99/8c/70/998c7017bbe8f1f42a9d257abeea98e9.jpg' },
+    { id: '3', uri: 'https://i.pinimg.com/736x/48/07/a3/4807a3c7399db01305c85ed3f4e24f38.jpg' },
+    { id: '4', uri: 'https://i.pinimg.com/736x/99/8c/70/998c7017bbe8f1f42a9d257abeea98e9.jpg' },
+    { id: '5', uri: 'https://i.pinimg.com/736x/48/07/a3/4807a3c7399db01305c85ed3f4e24f38.jpg' },
+    { id: '6', uri: 'https://i.pinimg.com/736x/99/8c/70/998c7017bbe8f1f42a9d257abeea98e9.jpg' },
+    { id: '7', uri: 'https://i.pinimg.com/736x/48/07/a3/4807a3c7399db01305c85ed3f4e24f38.jpg' },
+    { id: '8', uri: 'https://i.pinimg.com/736x/99/8c/70/998c7017bbe8f1f42a9d257abeea98e9.jpg' },
   ];
   const totalPhotos = 214;
 
@@ -60,10 +61,10 @@ export default function AdminDashboard({ onBack }) {
 
   // Services data
   const services = [
-    { id: '1', title: 'Create Event', icon: 'event', color: '#E8D5FF' },
-    { id: '2', title: 'Volunteer', icon: 'handshake', color: '#FFE5F0' },
-    { id: '3', title: 'Member Ma...', icon: 'people', color: '#E5F5E8' },
-    { id: '4', title: 'Notice board', icon: 'dashboard', color: '#FFF5E5' },
+    { id: '1', title: 'Create Event', icon: 'event', color: '#E3D8F7', iconColor: '#E3D8F7' },
+    { id: '2', title: 'Volunteer', icon: 'handshake', color: '#FDDAD9', iconColor: '#FDDAD9' },
+    { id: '3', title: 'Member Management', icon: 'people', color: '#E5F4E2', iconColor: '#E5F4E2' },
+    { id: '4', title: 'Notice board', icon: 'dashboard', color: '#FFF3DA', iconColor: '#FFF3DA' },
   ];
 
   const renderMember = ({ item }) => (
@@ -87,35 +88,7 @@ export default function AdminDashboard({ onBack }) {
   return (
     <SafeAreaView style={adminDashboardStyles.container}>
       {/* Custom Header */}
-      <View style={adminDashboardStyles.header}>
-        <View style={adminDashboardStyles.headerTop}>
-          <TouchableOpacity onPress={onBack} style={adminDashboardStyles.backButton}>
-            <Icon name="arrow-back" size={24} color="#ffffff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={adminDashboardStyles.shareButton}>
-            <Icon name="share" size={24} color="#ffffff" />
-          </TouchableOpacity>
-          {mandalData.isPublic && (
-            <Text style={adminDashboardStyles.publicText}>Public</Text>
-          )}
-        </View>
-
-        {/* Mandal Info Section */}
-        <View style={adminDashboardStyles.mandalInfoSection}>
-          <Image
-            source={{ uri: mandalData.logo }}
-            style={adminDashboardStyles.mandalLogo}
-          />
-          <View style={adminDashboardStyles.mandalInfo}>
-            <Text style={adminDashboardStyles.mandalName} numberOfLines={2}>
-              {mandalData.name}
-            </Text>
-            <Text style={adminDashboardStyles.mandalSubtitle}>
-              {mandalData.subtitle}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <MandalHeader mandalData={mandalData} onBack={onBack} />
 
       {/* Main Content */}
       <ScrollView
@@ -181,7 +154,19 @@ export default function AdminDashboard({ onBack }) {
 
         {/* Donations Section */}
         <View style={adminDashboardStyles.section}>
-          <Text style={adminDashboardStyles.sectionTitle}>Donations</Text>
+          <View style={adminDashboardStyles.sectionTitleRow}>
+            <Text style={adminDashboardStyles.sectionTitleWithCount}>Donations</Text>
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center' }}
+              onPress={() => {
+                if (onNavigateToDonations) {
+                  onNavigateToDonations();
+                }
+              }}
+            >
+              <Icon name="chevron-right" size={16} color={PURPLE} />
+            </TouchableOpacity>
+          </View>
           <View style={adminDashboardStyles.donationsContainer}>
             <View style={adminDashboardStyles.donationCard}>
               <Text style={adminDashboardStyles.donationLabel}>Total Donation</Text>
@@ -210,8 +195,12 @@ export default function AdminDashboard({ onBack }) {
                   { backgroundColor: service.color },
                 ]}
               >
-                <Icon name={service.icon} size={32} color={PURPLE} />
-                <Text style={adminDashboardStyles.serviceTitle}>{service.title}</Text>
+                <View style={adminDashboardStyles.serviceIconContainer}>
+                  <Icon name={service.icon} size={24} color={service.iconColor} />
+                </View>
+                <Text style={adminDashboardStyles.serviceTitle} numberOfLines={1} ellipsizeMode="tail">
+                  {service.title}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>

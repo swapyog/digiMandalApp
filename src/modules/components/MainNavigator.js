@@ -5,7 +5,7 @@ import { CreatePage } from '../create';
 import { EventsPage } from '../events';
 import { ProfilePage } from '../profile';
 
-export default function MainNavigator({ onNavigateToAdminDashboard }) {
+export default function MainNavigator({ onNavigateToAdminDashboard, onNavigateToMemberDashboard }) {
   const [selectedTab, setSelectedTab] = useState('home');
 
   const renderPage = () => {
@@ -16,6 +16,7 @@ export default function MainNavigator({ onNavigateToAdminDashboard }) {
             selectedTab={selectedTab}
             onTabChange={setSelectedTab}
             onNavigateToAdminDashboard={onNavigateToAdminDashboard}
+            onNavigateToMemberDashboard={onNavigateToMemberDashboard}
           />
         );
       case 'discover':
@@ -32,6 +33,7 @@ export default function MainNavigator({ onNavigateToAdminDashboard }) {
             selectedTab={selectedTab}
             onTabChange={setSelectedTab}
             onNavigateToAdminDashboard={onNavigateToAdminDashboard}
+            onNavigateToMemberDashboard={onNavigateToMemberDashboard}
           />
         );
     }
