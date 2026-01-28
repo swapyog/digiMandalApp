@@ -1,0 +1,44 @@
+diff --git a/node_modules/prop-types/checkPropTypes.js b/node_modules/prop-types/checkPropTypes.js
+index 481f2cf..873fad1 100644
+--- a/node_modules/prop-types/checkPropTypes.js
++++ b/node_modules/prop-types/checkPropTypes.js
+@@ -10,9 +10,9 @@
+ var printWarning = function() {};
+ 
+ if (process.env.NODE_ENV !== 'production') {
+-  var ReactPropTypesSecret = require('./lib/ReactPropTypesSecret');
++  var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
+   var loggedTypeFailures = {};
+-  var has = require('./lib/has');
++  var has = Function.call.bind(Object.prototype.hasOwnProperty);
+ 
+   printWarning = function(text) {
+     var message = 'Warning: ' + text;
+diff --git a/node_modules/prop-types/factoryWithThrowingShims.js b/node_modules/prop-types/factoryWithThrowingShims.js
+index ac88267..a420353 100644
+--- a/node_modules/prop-types/factoryWithThrowingShims.js
++++ b/node_modules/prop-types/factoryWithThrowingShims.js
+@@ -7,7 +7,7 @@
+ 
+ 'use strict';
+ 
+-var ReactPropTypesSecret = require('./lib/ReactPropTypesSecret');
++var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
+ 
+ function emptyFunction() {}
+ function emptyFunctionWithReset() {}
+diff --git a/node_modules/prop-types/factoryWithTypeCheckers.js b/node_modules/prop-types/factoryWithTypeCheckers.js
+index a88068e..6f20ca7 100644
+--- a/node_modules/prop-types/factoryWithTypeCheckers.js
++++ b/node_modules/prop-types/factoryWithTypeCheckers.js
+@@ -10,8 +10,8 @@
+ var ReactIs = require('react-is');
+ var assign = require('object-assign');
+ 
+-var ReactPropTypesSecret = require('./lib/ReactPropTypesSecret');
+-var has = require('./lib/has');
++var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
++var has = Function.call.bind(Object.prototype.hasOwnProperty);
+ var checkPropTypes = require('./checkPropTypes');
+ 
+ var printWarning = function() {};

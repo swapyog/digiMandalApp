@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DocumentPicker from 'react-native-document-picker';
+import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
 import { homeStyles } from '../../styles/homeStyles';
 import BottomNavigation from '../components/BottomNavigation';
 import { FloatingLabelInput, FloatingLabelTextarea, SelectionModal } from '../../components';
@@ -361,7 +361,7 @@ export default function CreatePage({ selectedTab, onTabChange }) {
 
   // Media Picker Functions
   const checkDocumentPickerAvailable = () => {
-    if (!DocumentPicker || !DocumentPicker.pick) {
+    if (typeof pick !== 'function') {
       Alert.alert(
         'Module Not Available',
         'Document picker module is not properly linked. Please rebuild the app:\n\n' +
@@ -383,8 +383,8 @@ export default function CreatePage({ selectedTab, onTabChange }) {
     
     setMediaPickerVisible(false);
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.images],
+      const result = await pick({
+        type: [types.images],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -402,7 +402,7 @@ export default function CreatePage({ selectedTab, onTabChange }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         console.log('User cancelled image picker');
       } else {
         console.error('Error picking image:', err);
@@ -419,8 +419,8 @@ export default function CreatePage({ selectedTab, onTabChange }) {
     
     setMediaPickerVisible(false);
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.video],
+      const result = await pick({
+        type: [types.video],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -438,7 +438,7 @@ export default function CreatePage({ selectedTab, onTabChange }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         console.log('User cancelled video picker');
       } else {
         console.error('Error picking video:', err);
@@ -455,8 +455,8 @@ export default function CreatePage({ selectedTab, onTabChange }) {
     
     setMediaPickerVisible(false);
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.images, DocumentPicker.types.video],
+      const result = await pick({
+        type: [types.images, types.video],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -475,7 +475,7 @@ export default function CreatePage({ selectedTab, onTabChange }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         console.log('User cancelled media picker');
       } else {
         console.error('Error picking media:', err);

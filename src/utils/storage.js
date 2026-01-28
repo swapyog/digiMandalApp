@@ -5,6 +5,8 @@ const STORAGE_KEYS = {
   LAST_SCREEN: 'digimandal_last_screen',
   MOBILE_NUMBER: 'digimandal_mobile_number',
   OTP_VERIFIED: 'digimandal_otp_verified',
+  ACCESS_TOKEN: 'digimandal_access_token',
+  MANDAL_ID: 'digimandal_mandal_id',
   PERMISSION_PHONE_ACCESS: 'digimandal_permission_phone_access',
   PERMISSION_PHONE: 'digimandal_permission_phone',
   PERMISSION_SMS: 'digimandal_permission_sms',
@@ -83,6 +85,50 @@ export const StorageService = {
       await AsyncStorage.setItem(STORAGE_KEYS.OTP_VERIFIED, String(verified));
     } catch (error) {
       console.error('Error setting OTP verified:', error);
+    }
+  },
+
+  // Access Token
+  async getAccessToken() {
+    try {
+      return await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    } catch (error) {
+      console.error('Error getting access token:', error);
+      return null;
+    }
+  },
+
+  async setAccessToken(token) {
+    try {
+      if (token != null) {
+        await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, String(token));
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      }
+    } catch (error) {
+      console.error('Error setting access token:', error);
+    }
+  },
+
+  // Mandal ID (current create-flow mandal)
+  async getMandalId() {
+    try {
+      return await AsyncStorage.getItem(STORAGE_KEYS.MANDAL_ID);
+    } catch (error) {
+      console.error('Error getting mandal id:', error);
+      return null;
+    }
+  },
+
+  async setMandalId(mandalId) {
+    try {
+      if (mandalId != null) {
+        await AsyncStorage.setItem(STORAGE_KEYS.MANDAL_ID, String(mandalId));
+      } else {
+        await AsyncStorage.removeItem(STORAGE_KEYS.MANDAL_ID);
+      }
+    } catch (error) {
+      console.error('Error setting mandal id:', error);
     }
   },
 

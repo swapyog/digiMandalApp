@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ScrollView,
   Text,
@@ -6,17 +6,39 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { memberDashboardStyles } from '../../../styles/memberDashboardStyles';
 import MemberHeader from '../components/MemberHeader';
 import AddButton from '../components/AddButton';
+import MembersScreen from './MembersScreen';
+import InviteMembersScreen from './InviteMembersScreen';
+import { AllNoticesScreen, CreateNoticeScreen, NoticePreviewScreen, ArchivedNoticesScreen } from '../noticeboard';
+import { AllIssuesScreen, RaiseIssueScreen, IssuePreviewScreen, IssueDetailScreen, ResolveIssueScreen } from '../issues';
 
 const PURPLE = '#7E48DC';
 const DARK_PURPLE = '#110723';
 
 export default function MemberDashboard({ onBack }) {
+  const [membersScreenVisible, setMembersScreenVisible] = useState(false);
+  const [inviteMembersVisible, setInviteMembersVisible] = useState(false);
+  const [allNoticesVisible, setAllNoticesVisible] = useState(false);
+  const [archivedNoticesVisible, setArchivedNoticesVisible] = useState(false);
+  const [archivedType, setArchivedType] = useState('notice');
+  const [createNoticeVisible, setCreateNoticeVisible] = useState(false);
+  const [noticePreviewVisible, setNoticePreviewVisible] = useState(false);
+  const [noticeData, setNoticeData] = useState(null);
+  const [allIssuesVisible, setAllIssuesVisible] = useState(false);
+  const [raiseIssueVisible, setRaiseIssueVisible] = useState(false);
+  const [issuePreviewVisible, setIssuePreviewVisible] = useState(false);
+  const [issueDetailVisible, setIssueDetailVisible] = useState(false);
+  const [resolveIssueVisible, setResolveIssueVisible] = useState(false);
+  const [issueData, setIssueData] = useState(null);
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [issueSuccessForNext, setIssueSuccessForNext] = useState(null);
+
   // Sample mandal data
   const mandalData = {
     logo: 'https://www.marathidesigns.com/storage/ganpati-logo-design-psd-1.webp',
@@ -260,16 +282,20 @@ export default function MemberDashboard({ onBack }) {
 
   const MemberIssuesSection = () => (
     <View style={memberDashboardStyles.section}>
-      <View style={memberDashboardStyles.issuesCard}>
+      <TouchableOpacity
+        style={memberDashboardStyles.issuesCard}
+        onPress={() => setAllIssuesVisible(true)}
+        activeOpacity={0.8}
+      >
         <Icon name="report-problem" size={24} color="#F13030" />
         <View style={memberDashboardStyles.issuesContent}>
           <Text style={memberDashboardStyles.issuesTitle}>Member Issues</Text>
-          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={memberDashboardStyles.issuesCount}>3 Pending </Text>
             <Icon name="chevron-right" size={16} color={PURPLE} />
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 
@@ -277,7 +303,10 @@ export default function MemberDashboard({ onBack }) {
     <View style={[memberDashboardStyles.section, memberDashboardStyles.noticeSection]}>
       <View style={memberDashboardStyles.sectionTitleRow}>
         <Text style={memberDashboardStyles.sectionTitleDark}>Notice Board</Text>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity 
+          style={{ flexDirection: 'row', alignItems: 'center' }}
+          onPress={() => setAllNoticesVisible(true)}
+        >
           <Text style={memberDashboardStyles.sectionCountText}>
             2 New • <Text style={memberDashboardStyles.sectionLinkText}>View All</Text>
           </Text>
@@ -292,7 +321,10 @@ export default function MemberDashboard({ onBack }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={memberDashboardStyles.noticesList}
       />
-      <AddButton text="Publish Notices & Announcement" />
+      <AddButton 
+        text="Publish Notices & Announcement" 
+        onPress={() => setCreateNoticeVisible(true)}
+      />
     </View>
   );
 
@@ -361,7 +393,14 @@ export default function MemberDashboard({ onBack }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={memberDashboardStyles.membersList}
       />
-      <AddButton text="Invite Members" />
+      <AddButton 
+        text="Invite Members" 
+        onPress={() => setMembersScreenVisible(true)}
+      />
+      {/* <AddButton 
+        text="Invite Members list" 
+        onPress={() => setInviteMembersVisible(true)}
+      /> */}
     </View>
   );
 
@@ -382,6 +421,166 @@ export default function MemberDashboard({ onBack }) {
     </View>
   );
 
+  if (membersScreenVisible) {
+    return (
+      <MembersScreen
+        onBack={() => setMembersScreenVisible(false)}
+        associationName={mandalData.name}
+      />
+    );
+  }
+
+  if (allNoticesVisible) {
+    return (
+      <AllNoticesScreen
+        onBack={() => setAllNoticesVisible(false)}
+        onNavigateToArchived={(activeTab) => {
+          setArchivedType(activeTab === 'Announcements' ? 'announcement' : 'notice');
+          setAllNoticesVisible(false);
+          setArchivedNoticesVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (archivedNoticesVisible) {
+    return (
+      <ArchivedNoticesScreen
+        onBack={() => setArchivedNoticesVisible(false)}
+        type={archivedType}
+      />
+    );
+  }
+
+  if (createNoticeVisible) {
+    return (
+      <CreateNoticeScreen
+        onBack={() => setCreateNoticeVisible(false)}
+        onNext={(data) => {
+          setNoticeData(data);
+          setCreateNoticeVisible(false);
+          setNoticePreviewVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (noticePreviewVisible) {
+    return (
+      <NoticePreviewScreen
+        onBack={() => {
+          setNoticePreviewVisible(false);
+          setNoticeData(null);
+        }}
+        noticeData={noticeData}
+        onEdit={() => {
+          setNoticePreviewVisible(false);
+          setCreateNoticeVisible(true);
+        }}
+        onPublish={() => {
+          // Handle publish logic
+          setNoticePreviewVisible(false);
+          setNoticeData(null);
+          setAllNoticesVisible(true);
+        }}
+        onNavigateToAllNotices={() => {
+          setNoticePreviewVisible(false);
+          setNoticeData(null);
+          setAllNoticesVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (resolveIssueVisible) {
+    return (
+      <ResolveIssueScreen
+        onBack={() => setResolveIssueVisible(false)}
+        onSubmit={() => {
+          setResolveIssueVisible(false);
+          setSelectedIssue(null);
+          setAllIssuesVisible(true);
+        }}
+        issue={selectedIssue}
+        associationName={mandalData.name}
+      />
+    );
+  }
+
+  if (issueDetailVisible) {
+    return (
+      <IssueDetailScreen
+        onBack={() => {
+          setIssueDetailVisible(false);
+          setSelectedIssue(null);
+        }}
+        onResolve={() => {
+          setIssueDetailVisible(false);
+          setResolveIssueVisible(true);
+        }}
+        issue={selectedIssue}
+        associationName={mandalData.name}
+      />
+    );
+  }
+
+  if (allIssuesVisible) {
+    return (
+      <AllIssuesScreen
+        onBack={() => {
+          setAllIssuesVisible(false);
+          setIssueSuccessForNext(null);
+        }}
+        onRaiseIssue={() => {
+          setAllIssuesVisible(false);
+          setRaiseIssueVisible(true);
+        }}
+        onIssuePress={(issue) => {
+          setSelectedIssue(issue);
+          setAllIssuesVisible(false);
+          setIssueDetailVisible(true);
+        }}
+        successIssue={issueSuccessForNext}
+        onSuccessModalClose={() => setIssueSuccessForNext(null)}
+      />
+    );
+  }
+
+  if (issuePreviewVisible) {
+    return (
+      <IssuePreviewScreen
+        onBack={() => {
+          setIssuePreviewVisible(false);
+          setIssueData(null);
+        }}
+        onNext={() => {
+          setIssueSuccessForNext(issueData);
+          setIssuePreviewVisible(false);
+          setAllIssuesVisible(true);
+        }}
+        issueData={issueData}
+        associationName={mandalData.name}
+      />
+    );
+  }
+
+  if (raiseIssueVisible) {
+    return (
+      <RaiseIssueScreen
+        onBack={() => setRaiseIssueVisible(false)}
+        onNext={(data) => {
+          setIssueData({
+            ...data,
+            reporterName: data.selectedMembers?.[0]?.name || 'Member',
+          });
+          setRaiseIssueVisible(false);
+          setIssuePreviewVisible(true);
+        }}
+        associationName={mandalData.name}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={memberDashboardStyles.container}>
       {/* Main Content */}
@@ -394,6 +593,9 @@ export default function MemberDashboard({ onBack }) {
           mandalData={mandalData}
           onBack={onBack}
           quickActions={quickActions}
+          onQuickActionPress={(action) => {
+            if (action.id === '4') setAllIssuesVisible(true);
+          }}
         />
 
         {/* Donations Section */}
@@ -419,6 +621,18 @@ export default function MemberDashboard({ onBack }) {
         {/* About Section */}
         <AboutSection />
       </ScrollView>
+
+      <InviteMembersScreen
+        visible={inviteMembersVisible}
+        onClose={() => setInviteMembersVisible(false)}
+        onSuccess={() => {
+          setInviteMembersVisible(false);
+          Alert.alert(
+            'Success',
+            'You have invited a member. They will be added once they accept the request from DigiMandal App.'
+          );
+        }}
+      />
     </SafeAreaView>
   );
 }

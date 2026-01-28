@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, Text, TouchableOpacity, View, Modal, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DocumentPicker from 'react-native-document-picker';
+import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../styles/appStyles';
-import { PrimaryButton, FloatingLabelInput } from '../../components';
+import { PrimaryButton, FloatingDatePicker, FloatingLabelInput } from '../../components';
+import { apiHost, API_PATHS } from '../../constants';
+import { StorageService } from '../../utils/storage';
+import { getAuthHeaders } from '../../utils/common';
+import axios from 'axios';
+
+/** Parse DD/MM/YYYY to ISO string YYYY-MM-DDTHH:MM:SS.000Z */
+const toRegistrationDateISO = (ddmmyyyy) => {
+  if (!ddmmyyyy?.trim()) return null;
+  const parts = ddmmyyyy.trim().split(/[/\-.]/);
+  if (parts.length !== 3) return null;
+  const [d, m, y] = parts.map((p) => p.trim());
+  const day = parseInt(d, 10);
+  const month = parseInt(m, 10) - 1;
+  const year = parseInt(y, 10);
+  if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+  const date = new Date(year, month, day);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString();
+};
 
 export default function MandalStep4({ onNext, onBack }) {
   const [dateOfRegistration, setDateOfRegistration] = useState('');
@@ -12,10 +31,11 @@ export default function MandalStep4({ onNext, onBack }) {
   const [organisationAddress, setOrganisationAddress] = useState('');
   const [filePickerVisible, setFilePickerVisible] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Check if DocumentPicker is available
   const checkDocumentPickerAvailable = () => {
-    if (!DocumentPicker || !DocumentPicker.pick) {
+    if (typeof pick !== 'function') {
       Alert.alert(
         'Module Not Available',
         'Document picker module is not properly linked. Please rebuild the app:\n\n' +
@@ -37,8 +57,8 @@ export default function MandalStep4({ onNext, onBack }) {
     
     setFilePickerVisible(false); // Close modal first
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.images],
+      const result = await pick({
+        type: [types.images],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -57,7 +77,7 @@ export default function MandalStep4({ onNext, onBack }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         // User cancelled - no action needed
         console.log('User cancelled image picker');
       } else {
@@ -87,8 +107,8 @@ export default function MandalStep4({ onNext, onBack }) {
     
     setFilePickerVisible(false); // Close modal first
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.pdf],
+      const result = await pick({
+        type: [types.pdf],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -107,7 +127,7 @@ export default function MandalStep4({ onNext, onBack }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         // User cancelled - no action needed
         console.log('User cancelled PDF picker');
       } else {
@@ -137,8 +157,8 @@ export default function MandalStep4({ onNext, onBack }) {
     
     setFilePickerVisible(false); // Close modal first
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.images, DocumentPicker.types.pdf],
+      const result = await pick({
+        type: [types.images, types.pdf],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -157,7 +177,7 @@ export default function MandalStep4({ onNext, onBack }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         // User cancelled - no action needed
         console.log('User cancelled document picker');
       } else {
@@ -183,6 +203,56 @@ export default function MandalStep4({ onNext, onBack }) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  };
+
+  const handleNext = async () => {
+    if (!panNumber?.trim()) {
+      Alert.alert('Required', 'Please enter PAN number.');
+      return;
+    }
+    if (!dateOfRegistration?.trim()) {
+      Alert.alert('Required', 'Please enter Date of Registration.');
+      return;
+    }
+    const registrationDateISO = toRegistrationDateISO(dateOfRegistration);
+    if (!registrationDateISO) {
+      Alert.alert('Invalid date', 'Please enter Date of Registration in DD/MM/YYYY format.');
+      return;
+    }
+    if (!organisationAddress?.trim()) {
+      Alert.alert('Required', 'Please enter Organisation Address.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken()) ?? '';
+      const mandalId = await StorageService.getMandalId();
+      if (!accessToken) {
+        Alert.alert('Session expired', 'Please log in again.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      if (!mandalId) {
+        Alert.alert('Error', 'Mandal not found. Please complete previous steps first.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      await axios.post(
+        `${apiHost.baseURL}${API_PATHS.MANDAL}/${mandalId}/registration`,
+        {
+          panNumber: panNumber.trim(),
+          registrationDate: registrationDateISO,
+          organizationAddress: organisationAddress.trim(),
+        },
+        { headers: getAuthHeaders(accessToken) }
+      );
+      if (onNext) onNext();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      Alert.alert('Error', msg || 'Could not save registration. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -219,12 +289,12 @@ export default function MandalStep4({ onNext, onBack }) {
       >
         <Text style={styles.sectionTitle}>Registration Info</Text>
 
-        <FloatingLabelInput
+        <FloatingDatePicker
           label="Date of Registration"
           value={dateOfRegistration}
-          onChangeText={setDateOfRegistration}
+          onChange={setDateOfRegistration}
           placeholder="In DD/MM/YYYY Format"
-          keyboardType="number-pad"
+          containerStyle={{ marginBottom: 8 }}
         />
 
         <FloatingLabelInput
@@ -265,8 +335,9 @@ export default function MandalStep4({ onNext, onBack }) {
         </TouchableOpacity>
 
         <PrimaryButton
-          title="Next"
-          onPress={onNext}
+          title={submitting ? 'Saving…' : 'Next'}
+          onPress={handleNext}
+          disabled={submitting}
           style={{ marginTop: 24 }}
         />
       </ScrollView>

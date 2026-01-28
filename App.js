@@ -142,7 +142,10 @@ function App() {
             await StorageService.setLastScreen('login');
             setScreen('login');
           }}
-          onVerified={async () => {
+          onVerified={async (token) => {
+            if (token) {
+              await StorageService.setAccessToken(token);
+            }
             await StorageService.setOtpVerified(true);
             await StorageService.setLastScreen('mandal-step-1');
             setScreen('mandal-step-1');

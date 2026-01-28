@@ -1,25 +1,27 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../styles/appStyles';
 import { PrimaryButton, SelectionModal } from '../../components';
 import InviteMembersModal from './InviteMembersModal';
+import { apiHost, API_PATHS } from '../../constants';
+import { StorageService } from '../../utils/storage';
+import { getAuthHeaders } from '../../utils/common';
+import { designationOptions } from '../../utils/mandalData';
+import axios from 'axios';
+
+const getMobileFromMember = (member) => {
+  const cleaned = (member?.phone || '').replace(/\D/g, '');
+  return cleaned.length >= 10 ? cleaned.slice(-10) : null;
+};
 
 export default function MandalStep3({ onNext, onBack }) {
   const [inviteVisible, setInviteVisible] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [designationModalVisible, setDesignationModalVisible] = useState(false);
   const [selectedMemberForDesignation, setSelectedMemberForDesignation] = useState(null);
-
-  const designationOptions = [
-    { label: 'President', value: 'president' },
-    { label: 'Vice-President', value: 'vice-president' },
-    { label: 'Secretary', value: 'secretary' },
-    { label: 'Treasurer', value: 'treasurer' },
-    { label: 'Joint Secretary', value: 'joint-secretary' },
-    { label: 'Member', value: 'member' },
-  ];
+  const [submitting, setSubmitting] = useState(false);
 
   const handleMembersChange = (newMembers) => {
     // Preserve designations when members are updated from the modal
@@ -81,6 +83,60 @@ export default function MandalStep3({ onNext, onBack }) {
       return parts[0].substring(0, 2).toUpperCase();
     }
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const handleInviteAndProceed = async () => {
+    if (selectedMembers.length < 5) {
+      Alert.alert('Minimum members required', 'Please invite at least 5 core members to proceed.');
+      return;
+    }
+    const membersWithMobile = selectedMembers.filter((m) => getMobileFromMember(m));
+    if (membersWithMobile.length < selectedMembers.length) {
+      Alert.alert('Invalid members', 'All selected members must have a valid 10-digit mobile number.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken()) ?? '';
+      const mandalId = await StorageService.getMandalId();
+      if (!accessToken) {
+        Alert.alert('Session expired', 'Please log in again.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      if (!mandalId) {
+        Alert.alert('Error', 'Mandal not found. Please complete previous steps first.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      const failed = [];
+      for (const member of membersWithMobile) {
+        const mobile = getMobileFromMember(member);
+        if (!mobile) continue;
+        try {
+          await axios.post(
+            `${apiHost.baseURL}${API_PATHS.INVITATION}/${mandalId}/send`,
+            { mobile },
+            { headers: getAuthHeaders(accessToken) }
+          );
+        } catch (err) {
+          const msg = err.response?.data?.message || err.message;
+          failed.push({ name: member.name || mobile, msg });
+        }
+      }
+      if (failed.length > 0) {
+        const message = failed.map((f) => `${f.name}: ${f.msg}`).join('\n');
+        Alert.alert('Some invitations failed', message);
+        setSubmitting(false);
+        return;
+      }
+      if (onNext) onNext();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      Alert.alert('Error', msg || 'Could not send invitations. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -188,8 +244,9 @@ export default function MandalStep3({ onNext, onBack }) {
         ))}
 
         <PrimaryButton
-          title="Invite Members & Proceed"
-          onPress={onNext}
+          title={submitting ? 'Sending invites…' : 'Invite Members & Proceed'}
+          onPress={handleInviteAndProceed}
+          disabled={submitting}
           showArrow={false}
         />
       </ScrollView>

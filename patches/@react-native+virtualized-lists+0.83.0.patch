@@ -1,0 +1,29 @@
+diff --git a/node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js b/node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js
+index 66e6fd5..1f8f35a 100644
+--- a/node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js
++++ b/node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js
+@@ -25,8 +25,6 @@ import type {
+   ViewStyle,
+ } from 'react-native';
+ 
+-import clamp from '../Utilities/clamp';
+-import infoLog from '../Utilities/infoLog';
+ import {CellRenderMask} from './CellRenderMask';
+ import ChildListCollection from './ChildListCollection';
+ import FillRateHelper from './FillRateHelper';
+@@ -66,6 +64,15 @@ import {
+ } from 'react-native';
+ import * as ReactNativeFeatureFlags from 'react-native/src/private/featureflags/ReactNativeFeatureFlags';
+ 
++function clamp(min, value, max) {
++  if (value < min) return min;
++  if (value > max) return max;
++  return value;
++}
++function infoLog(...args) {
++  return console.log(...args);
++}
++
+ export type {ListRenderItemInfo, ListRenderItem, Separators};
+ 
+ const ON_EDGE_REACHED_EPSILON = 0.001;

@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { Text, View, Image } from 'react-native';
+import { Text, View, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../styles/appStyles';
 import { FloatingLabelInput, PrimaryButton } from '../../components';
+import { apiHost, API_PATHS } from '../../constants';
+import { StorageService } from '../../utils/storage';
+import { getAuthHeaders } from '../../utils/common';
+import axios from 'axios';
 
 export default function LoginScreen({ mobileNumber, setMobileNumber, onGetOtp }) {
   const [touched, setTouched] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const isTenDigits = /^\d{10}$/.test(mobileNumber);
   const hasError = touched && !isTenDigits;
@@ -14,6 +19,30 @@ export default function LoginScreen({ mobileNumber, setMobileNumber, onGetOtp })
       ? 'Enter a 10-digit mobile number'
       : 'Enter a valid mobile number'
     : '';
+
+  const handleGetOtp = async () => {
+    if (!isTenDigits) return;
+    setTouched(true);
+    setSendingOtp(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken?.()) ?? '';
+      const res = await axios.post(
+        `${apiHost.baseURL}${API_PATHS.AUTH}/send-otp`,
+        { mobile: mobileNumber },
+        { headers: getAuthHeaders(accessToken) }
+      );
+      const data = res.data;
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to send OTP');
+      }
+      if (onGetOtp) onGetOtp();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      Alert.alert('Error', msg || 'Could not send OTP. Check backend is running on port 3000.');
+    } finally {
+      setSendingOtp(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.loginRoot}>
@@ -48,14 +77,9 @@ export default function LoginScreen({ mobileNumber, setMobileNumber, onGetOtp })
         />
 
         <PrimaryButton
-          title="Get OTP"
-          onPress={() => {
-            setTouched(true);
-            if (isTenDigits) {
-              onGetOtp();
-            }
-          }}
-          disabled={!isTenDigits}
+          title={sendingOtp ? 'Sending…' : 'Get OTP'}
+          onPress={handleGetOtp}
+          disabled={!isTenDigits || sendingOtp}
         />
       </View>
     </SafeAreaView>

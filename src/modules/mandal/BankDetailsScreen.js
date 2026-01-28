@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View, Modal, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DocumentPicker from 'react-native-document-picker';
+import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
 import { styles, PURPLE } from '../../styles/appStyles';
 import { PrimaryButton, FloatingLabelInput, SelectionModal } from '../../components';
+import { apiHost, API_PATHS } from '../../constants';
+import { StorageService } from '../../utils/storage';
+import { getAuthHeaders } from '../../utils/common';
+import { bankOptions } from '../../utils/mandalData';
+import axios from 'axios';
 
 export default function BankDetailsScreen({ onNext, onBack }) {
   const [bankName, setBankName] = useState('');
@@ -14,24 +19,11 @@ export default function BankDetailsScreen({ onNext, onBack }) {
   const [filePickerVisible, setFilePickerVisible] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [bankModalVisible, setBankModalVisible] = useState(false);
-
-  // Sample bank list - replace with actual bank list
-  const bankOptions = [
-    { label: 'State Bank of India', value: 'sbi' },
-    { label: 'HDFC Bank', value: 'hdfc' },
-    { label: 'ICICI Bank', value: 'icici' },
-    { label: 'Axis Bank', value: 'axis' },
-    { label: 'Kotak Mahindra Bank', value: 'kotak' },
-    { label: 'Punjab National Bank', value: 'pnb' },
-    { label: 'Bank of Baroda', value: 'bob' },
-    { label: 'Canara Bank', value: 'canara' },
-    { label: 'Union Bank of India', value: 'union' },
-    { label: 'Indian Bank', value: 'indian' },
-  ];
+  const [submitting, setSubmitting] = useState(false);
 
   // Check if DocumentPicker is available
   const checkDocumentPickerAvailable = () => {
-    if (!DocumentPicker || !DocumentPicker.pick) {
+    if (typeof pick !== 'function') {
       Alert.alert(
         'Module Not Available',
         'Document picker module is not properly linked. Please rebuild the app:\n\n' +
@@ -53,8 +45,8 @@ export default function BankDetailsScreen({ onNext, onBack }) {
     
     setFilePickerVisible(false);
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.images],
+      const result = await pick({
+        type: [types.images],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -72,7 +64,7 @@ export default function BankDetailsScreen({ onNext, onBack }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         console.log('User cancelled image picker');
       } else {
         console.error('Error picking image:', err);
@@ -101,8 +93,8 @@ export default function BankDetailsScreen({ onNext, onBack }) {
     
     setFilePickerVisible(false);
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.pdf],
+      const result = await pick({
+        type: [types.pdf],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -120,7 +112,7 @@ export default function BankDetailsScreen({ onNext, onBack }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         console.log('User cancelled PDF picker');
       } else {
         console.error('Error picking PDF:', err);
@@ -149,8 +141,8 @@ export default function BankDetailsScreen({ onNext, onBack }) {
     
     setFilePickerVisible(false);
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.images, DocumentPicker.types.pdf],
+      const result = await pick({
+        type: [types.images, types.pdf],
         allowMultiSelection: false,
       });
       if (result && result.length > 0) {
@@ -168,7 +160,7 @@ export default function BankDetailsScreen({ onNext, onBack }) {
         });
       }
     } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         console.log('User cancelled document picker');
       } else {
         console.error('Error picking document:', err);
@@ -205,6 +197,60 @@ export default function BankDetailsScreen({ onNext, onBack }) {
   const getSelectedBankValue = () => {
     const selectedOption = bankOptions.find(opt => opt.label === bankName);
     return selectedOption ? selectedOption.value : null;
+  };
+
+  const handleNext = async () => {
+    if (!bankName?.trim()) {
+      Alert.alert('Required', 'Please select Bank Name.');
+      return;
+    }
+    if (!accountName?.trim()) {
+      Alert.alert('Required', 'Please enter Account Name.');
+      return;
+    }
+    if (!accountNumber?.trim()) {
+      Alert.alert('Required', 'Please enter Account Number.');
+      return;
+    }
+    if (accountNumber.trim() !== confirmAccountNumber.trim()) {
+      Alert.alert('Mismatch', 'Account Number and Confirm Account Number do not match.');
+      return;
+    }
+    if (!ifscCode?.trim()) {
+      Alert.alert('Required', 'Please enter IFSC Code.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken()) ?? '';
+      const mandalId = await StorageService.getMandalId();
+      if (!accessToken) {
+        Alert.alert('Session expired', 'Please log in again.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      if (!mandalId) {
+        Alert.alert('Error', 'Mandal not found. Please complete previous steps first.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      await axios.post(
+        `${apiHost.baseURL}${API_PATHS.MANDAL}/${mandalId}/bank-details`,
+        {
+          bankName: bankName.trim(),
+          accountName: accountName.trim(),
+          accountNumber: accountNumber.trim(),
+          ifscCode: ifscCode.trim(),
+        },
+        { headers: getAuthHeaders(accessToken) }
+      );
+      if (onNext) onNext();
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      Alert.alert('Error', msg || 'Could not save bank details. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -292,8 +338,9 @@ export default function BankDetailsScreen({ onNext, onBack }) {
         </TouchableOpacity>
 
         <PrimaryButton
-          title="Next"
-          onPress={onNext}
+          title={submitting ? 'Saving…' : 'Next'}
+          onPress={handleNext}
+          disabled={submitting}
           style={{ marginTop: 24 }}
         />
       </ScrollView>

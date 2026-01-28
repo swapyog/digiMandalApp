@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View, Image } from 'react-native';
+import { Text, TouchableOpacity, View, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../styles/appStyles';
 import { FloatingLabelInput, PrimaryButton } from '../../components';
+import { apiHost, API_PATHS } from '../../constants';
+import { StorageService } from '../../utils/storage';
+import { getAuthHeaders } from '../../utils/common';
+import axios from 'axios';
 
 export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
   const [otp, setOtp] = useState('');
@@ -10,38 +14,76 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   const isSixDigits = /^\d{6}$/.test(otp);
 
-  useEffect(() => {
-    if (secondsLeft <= 0) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      setSecondsLeft(prev => prev - 1);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [secondsLeft]);
-
-  const handleVerify = () => {
-    if (!isSixDigits || otp !== '123456') {
-      setError('Invalid OTP');
-      return;
-    }
-    setError('');
-    if (onVerified) {
-      onVerified();
+  const sendOtp = async (mobile = mobileNumber) => {
+    if (!mobile) return;
+    setSendingOtp(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken?.()) ?? '';
+      const res = await axios.post(
+        `${apiHost.baseURL}${API_PATHS.AUTH}/send-otp`,
+        { mobile },
+        { headers: getAuthHeaders(accessToken) }
+      );
+      const data = res.data;
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to send OTP');
+      }
+      setSecondsLeft(60);
+      setError('');
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      Alert.alert('Error', msg || 'Could not send OTP. Check backend is running on port 3000.');
+    } finally {
+      setSendingOtp(false);
     }
   };
 
-  const handleResend = () => {
-    if (secondsLeft > 0 || attemptsLeft <= 0) {
-      return;
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const timer = setTimeout(() => setSecondsLeft(prev => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [secondsLeft]);
+
+  const handleVerify = async () => {
+    if (!isSixDigits) return;
+    setError('');
+    setVerifying(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken?.()) ?? '';
+      const res = await axios.post(
+        `${apiHost.baseURL}${API_PATHS.AUTH}/verify-otp`,
+        { mobile: mobileNumber, otp },
+        { headers: getAuthHeaders(accessToken) }
+      );
+      const data = res.data ?? {};
+      if (data.success && onVerified) {
+        const token = data.token ?? data.accessToken ?? data.data?.token;
+        if (token) {
+          await StorageService.setAccessToken(token);
+        }
+        onVerified(token ?? null);
+      } else {
+        setError(data.message || 'Invalid or expired OTP');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      setError(msg || 'Invalid or expired OTP');
+    } finally {
+      setVerifying(false);
     }
+  };
+
+  const handleResend = async () => {
+    if (secondsLeft > 0 || attemptsLeft <= 0) return;
     setOtp('');
-    setSecondsLeft(60);
     setAttemptsLeft(prev => (prev > 0 ? prev - 1 : 0));
     setError('');
+    await sendOtp(mobileNumber);
   };
 
   const timerText =
@@ -106,16 +148,16 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
 
         <View style={styles.otpFooterRow}>
           <TouchableOpacity
-            disabled={secondsLeft > 0 || attemptsLeft <= 0}
+            disabled={secondsLeft > 0 || attemptsLeft <= 0 || sendingOtp}
             onPress={handleResend}
           >
             <Text
               style={[
                 styles.resendText,
-                secondsLeft > 0 && { color: '#6b7280' },
+                (secondsLeft > 0 || sendingOtp) && { color: '#6b7280' },
               ]}
             >
-              {timerText}
+              {sendingOtp ? 'Sending…' : timerText}
             </Text>
           </TouchableOpacity>
           {attemptsText ? (
@@ -124,9 +166,9 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
         </View>
 
         <PrimaryButton
-          title="Verify"
+          title={verifying ? 'Verifying…' : 'Verify'}
           onPress={handleVerify}
-          disabled={!isSixDigits}
+          disabled={!isSixDigits || verifying}
           showArrow={false}
         />
 

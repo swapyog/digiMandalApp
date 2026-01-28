@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { Alert, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../styles/appStyles';
 import { PrimaryButton, FloatingLabelInput, SelectionModal } from '../../components';
+import { apiHost, API_PATHS } from '../../constants';
+import { StorageService } from '../../utils/storage';
+import { getAuthHeaders } from '../../utils/common';
+import { cityOptions, stateOptions } from '../../utils/mandalData';
+import axios from 'axios';
 
 export default function MandalStep2({ onNext, onBack }) {
   const [streetAddress1, setStreetAddress1] = useState('');
@@ -11,67 +16,21 @@ export default function MandalStep2({ onNext, onBack }) {
   const [pincode, setPincode] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState(
-    'Om Sai Krupa C.H.S., Khewra Circle Road, Gladys Alwis Marg, Pokharan Road No.2, Thane west'
-  );
   const [cityModalVisible, setCityModalVisible] = useState(false);
   const [stateModalVisible, setStateModalVisible] = useState(false);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
 
-  // Indian cities list
-  const cityOptions = [
-    { label: 'Mumbai', value: 'mumbai' },
-    { label: 'Delhi', value: 'delhi' },
-    { label: 'Bangalore', value: 'bangalore' },
-    { label: 'Hyderabad', value: 'hyderabad' },
-    { label: 'Chennai', value: 'chennai' },
-    { label: 'Kolkata', value: 'kolkata' },
-    { label: 'Pune', value: 'pune' },
-    { label: 'Ahmedabad', value: 'ahmedabad' },
-    { label: 'Jaipur', value: 'jaipur' },
-    { label: 'Surat', value: 'surat' },
-    { label: 'Lucknow', value: 'lucknow' },
-    { label: 'Kanpur', value: 'kanpur' },
-    { label: 'Nagpur', value: 'nagpur' },
-    { label: 'Indore', value: 'indore' },
-    { label: 'Thane', value: 'thane' },
-    { label: 'Bhopal', value: 'bhopal' },
-    { label: 'Visakhapatnam', value: 'visakhapatnam' },
-    { label: 'Patna', value: 'patna' },
-    { label: 'Vadodara', value: 'vadodara' },
-    { label: 'Ghaziabad', value: 'ghaziabad' },
-  ];
-
-  // Indian states list
-  const stateOptions = [
-    { label: 'Andhra Pradesh', value: 'andhra-pradesh' },
-    { label: 'Arunachal Pradesh', value: 'arunachal-pradesh' },
-    { label: 'Assam', value: 'assam' },
-    { label: 'Bihar', value: 'bihar' },
-    { label: 'Chhattisgarh', value: 'chhattisgarh' },
-    { label: 'Goa', value: 'goa' },
-    { label: 'Gujarat', value: 'gujarat' },
-    { label: 'Haryana', value: 'haryana' },
-    { label: 'Himachal Pradesh', value: 'himachal-pradesh' },
-    { label: 'Jharkhand', value: 'jharkhand' },
-    { label: 'Karnataka', value: 'karnataka' },
-    { label: 'Kerala', value: 'kerala' },
-    { label: 'Madhya Pradesh', value: 'madhya-pradesh' },
-    { label: 'Maharashtra', value: 'maharashtra' },
-    { label: 'Manipur', value: 'manipur' },
-    { label: 'Meghalaya', value: 'meghalaya' },
-    { label: 'Mizoram', value: 'mizoram' },
-    { label: 'Nagaland', value: 'nagaland' },
-    { label: 'Odisha', value: 'odisha' },
-    { label: 'Punjab', value: 'punjab' },
-    { label: 'Rajasthan', value: 'rajasthan' },
-    { label: 'Sikkim', value: 'sikkim' },
-    { label: 'Tamil Nadu', value: 'tamil-nadu' },
-    { label: 'Telangana', value: 'telangana' },
-    { label: 'Tripura', value: 'tripura' },
-    { label: 'Uttar Pradesh', value: 'uttar-pradesh' },
-    { label: 'Uttarakhand', value: 'uttarakhand' },
-    { label: 'West Bengal', value: 'west-bengal' },
-  ];
+  // Dynamic location text: from address fields, or coordinates when set
+  const displayLocation = useMemo(() => {
+    if (latitude?.trim() && longitude?.trim()) {
+      return `Latitude: ${latitude}, Longitude: ${longitude}`;
+    }
+    const parts = [streetAddress1?.trim(), landmark?.trim(), city?.trim(), state?.trim(), pincode?.trim()].filter(Boolean);
+    return parts.length ? parts.join(', ') : null;
+  }, [streetAddress1, landmark, city, state, pincode, latitude, longitude]);
 
   const handleCitySelect = value => {
     const selectedOption = cityOptions.find(opt => opt.value === value);
@@ -95,6 +54,66 @@ export default function MandalStep2({ onNext, onBack }) {
   const getSelectedStateValue = () => {
     const selectedOption = stateOptions.find(opt => opt.label === state);
     return selectedOption ? selectedOption.value : null;
+  };
+
+  const handleLocationModalSave = () => {
+    setLocationModalVisible(false);
+  };
+
+  const handleNext = async () => {
+    if (!streetAddress1?.trim()) {
+      Alert.alert('Required', 'Please enter Street Address 1');
+      return;
+    }
+    if (!city) {
+      Alert.alert('Required', 'Please select City');
+      return;
+    }
+    if (!state) {
+      Alert.alert('Required', 'Please select State');
+      return;
+    }
+    if (!pincode?.trim() || pincode.length !== 6) {
+      Alert.alert('Required', 'Please enter a valid 6-digit PIN code');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken()) ?? '';
+      const mandalId = await StorageService.getMandalId();
+      if (!accessToken) {
+        Alert.alert('Session expired', 'Please log in again.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      if (!mandalId) {
+        Alert.alert('Error', 'Mandal not found. Please complete Step 1 first.', [{ text: 'OK', onPress: () => onBack?.() }]);
+        setSubmitting(false);
+        return;
+      }
+      const res = await axios.post(
+        `${apiHost.baseURL}${API_PATHS.MANDAL}/${mandalId}/address`,
+        {
+          addressLine1: streetAddress1.trim(),
+          addressLine2: landmark?.trim() || undefined,
+          city: city.trim(),
+          state: state.trim(),
+          pincode: pincode.trim(),
+          latitude: latitude?.trim() || '',
+          longitude: longitude?.trim() || '',
+        },
+        { headers: getAuthHeaders(accessToken) }
+      );
+      const data = res.data;
+      if (data && onNext) {
+        onNext();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      Alert.alert('Error', msg || 'Could not save address. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -197,40 +216,89 @@ export default function MandalStep2({ onNext, onBack }) {
           <Text style={styles.inputLabel}>Location</Text>
           <View style={styles.mapContainer}>
             <View style={styles.mapPlaceholder}>
-              {/* Map placeholder - in real app, this would be a MapView component */}
-              {/* Simulated map roads */}
               <View style={styles.mapRoad1} />
               <View style={styles.mapRoad2} />
               <View style={styles.mapRoad3} />
-              {/* Location marker */}
               <View style={styles.mapMarker}>
                 <View style={styles.mapMarkerPin} />
               </View>
             </View>
             <TouchableOpacity
               style={styles.editLocationButton}
-              onPress={() => {
-                // Handle edit location - could open a map picker modal
-                console.log('Edit location pressed');
-              }}
+              onPress={() => setLocationModalVisible(true)}
             >
               <Text style={styles.editLocationButtonText}>Edit Location</Text>
             </TouchableOpacity>
           </View>
 
-          {selectedLocation && (
+          {displayLocation ? (
             <View style={styles.locationCard}>
               <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.locationText} numberOfLines={2}>
-                {selectedLocation}
+              <Text style={styles.locationText} numberOfLines={3}>
+                {displayLocation}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.locationCard}>
+              <Text style={styles.locationIcon}>📍</Text>
+              <Text style={[styles.locationText, { color: '#9ca3af' }]} numberOfLines={2}>
+                Fill address above, or tap Edit Location to enter coordinates
               </Text>
             </View>
           )}
         </View>
 
+        <Modal
+          visible={locationModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setLocationModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}
+            activeOpacity={1}
+            onPress={() => setLocationModalVisible(false)}
+          >
+            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={{ backgroundColor: '#1f2937', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 24, paddingBottom: 32 }}>
+              <Text style={[styles.sectionTitle, { marginBottom: 16 }]}>Set Location</Text>
+              <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 12 }}>Enter coordinates (optional)</Text>
+              <FloatingLabelInput
+                label="Latitude"
+                value={latitude}
+                onChangeText={setLatitude}
+                placeholder="e.g. 19.0760"
+                keyboardType="decimal-pad"
+              />
+              <FloatingLabelInput
+                label="Longitude"
+                value={longitude}
+                onChangeText={setLongitude}
+                placeholder="e.g. 72.8777"
+                keyboardType="decimal-pad"
+                containerStyle={{ marginTop: 8 }}
+              />
+              <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: '#374151', alignItems: 'center' }}
+                  onPress={() => setLocationModalVisible(false)}
+                >
+                  <Text style={{ color: '#fff' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, paddingVertical: 12, borderRadius: 8, backgroundColor: '#7c3aed', alignItems: 'center' }}
+                  onPress={handleLocationModalSave}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '600' }}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
+
         <PrimaryButton
-          title="Next"
-          onPress={onNext}
+          title={submitting ? 'Saving…' : 'Next'}
+          onPress={handleNext}
+          disabled={submitting}
           style={{ marginTop: 24 }}
         />
       </ScrollView>

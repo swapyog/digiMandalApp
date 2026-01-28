@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../styles/appStyles';
@@ -9,6 +9,11 @@ import {
   PrimaryButton,
   SelectionModal,
 } from '../../components';
+import { apiHost, API_PATHS } from '../../constants';
+import { StorageService } from '../../utils/storage';
+import { getAuthHeaders } from '../../utils/common';
+import { sizeOptions, categoryOptions, categorySections, getYearOptions } from '../../utils/mandalData';
+import axios from 'axios';
 
 export default function MandalStep1({ onNext, onBack }) {
   const [mandalName, setMandalName] = useState('');
@@ -20,50 +25,9 @@ export default function MandalStep1({ onNext, onBack }) {
   const [sizeModalVisible, setSizeModalVisible] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [formationYearModalVisible, setFormationYearModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const sizeOptions = [
-    { label: '1-20', value: '1-20' },
-    { label: '21-50', value: '21-50' },
-    { label: '51-200', value: '51-200' },
-    { label: '201-500', value: '201-500' },
-    { label: '501-2000', value: '501-2000' },
-    { label: 'More than 2000', value: 'more-than-2000' },
-  ];
-
-  const categoryOptions = [
-    { label: 'Cultural', value: 'cultural' },
-    { label: 'Education', value: 'education' },
-    { label: 'Entertainment', value: 'entertainment' },
-    { label: 'Design', value: 'design' },
-    { label: 'Welfare Association', value: 'welfare-association' },
-    { label: 'Sports Association', value: 'sports-association' },
-    { label: 'Religious', value: 'religious' },
-    { label: 'Social', value: 'social' },
-    { label: 'Charity', value: 'charity' },
-    { label: 'Youth', value: 'youth' },
-  ];
-
-  const categorySections = [
-    {
-      title: 'Popular',
-      options: categoryOptions.slice(0, 6),
-    },
-    {
-      title: 'All Categories',
-      options: categoryOptions,
-    },
-  ];
-
-  // Generate years from 2025 down to 1950
-  const generateYearOptions = () => {
-    const years = [];
-    for (let year = 2025; year >= 1950; year--) {
-      years.push({ label: String(year), value: String(year) });
-    }
-    return years;
-  };
-
-  const yearOptions = generateYearOptions();
+  const yearOptions = getYearOptions(2025, 1950);
 
   const handleSizeSelect = value => {
     const selectedOption = sizeOptions.find(opt => opt.value === value);
@@ -91,6 +55,55 @@ export default function MandalStep1({ onNext, onBack }) {
   const getSelectedCategoryValue = () => {
     const selectedOption = categoryOptions.find(opt => opt.label === mandalCategory);
     return selectedOption ? selectedOption.value : null;
+  };
+
+  const handleNext = async () => {
+    const category = getSelectedCategoryValue();
+    if (!mandalName?.trim()) {
+      Alert.alert('Required', 'Please enter Mandal Name');
+      return;
+    }
+    if (!category) {
+      Alert.alert('Required', 'Please select Mandal Category');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const accessToken = (await StorageService.getAccessToken()) ?? '';
+      if (!accessToken) {
+        Alert.alert(
+          'Session expired',
+          'Please log in again to create a mandal.',
+          [{ text: 'OK', onPress: () => onBack?.() }]
+        );
+        setSubmitting(false);
+        return;
+      }
+      const res = await axios.post(
+        `${apiHost.baseURL}${API_PATHS.MANDAL}`,
+        {
+          name: mandalName.trim(),
+          category,
+          size: getSelectedSizeValue() || undefined,
+          formationYear: formationYear ? parseInt(formationYear, 10) : undefined,
+          isPrivate: mandalType === 'private',
+        },
+        { headers: getAuthHeaders(accessToken) }
+      );
+      const data = res.data;
+      const mandalId = data?.data?.id;
+      if (mandalId != null) {
+        await StorageService.setMandalId(String(mandalId));
+      }
+      if (data && onNext) {
+        onNext();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message;
+      Alert.alert('Error', msg || 'Could not create mandal. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -197,7 +210,11 @@ export default function MandalStep1({ onNext, onBack }) {
           containerStyle={{ marginBottom: 24 }}
         />
 
-        <PrimaryButton title="Next" onPress={onNext} />
+        <PrimaryButton
+          title={submitting ? 'Creating…' : 'Next'}
+          onPress={handleNext}
+          disabled={submitting}
+        />
       </ScrollView>
 
       <SelectionModal
