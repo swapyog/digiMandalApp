@@ -3,7 +3,7 @@ import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../styles/appStyles';
-import { PrimaryButton, SelectionModal } from '../../components';
+import { PrimaryButton, SelectionModal, Loader } from '../../components';
 import InviteMembersModal from './InviteMembersModal';
 import { apiHost, API_PATHS } from '../../constants';
 import { StorageService } from '../../utils/storage';
@@ -244,12 +244,15 @@ export default function MandalStep3({ onNext, onBack }) {
         ))}
 
         <PrimaryButton
-          title={submitting ? 'Sending invites…' : 'Invite Members & Proceed'}
+          title="Invite Members & Proceed"
           onPress={handleInviteAndProceed}
           disabled={submitting}
           showArrow={false}
         />
       </ScrollView>
+
+      <Loader overlay visible={submitting} message="Sending Invites..." />
+
       <InviteMembersModal
         visible={inviteVisible}
         onClose={() => setInviteVisible(false)}

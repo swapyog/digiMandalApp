@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../styles/appStyles';
-import { FloatingLabelInput, PrimaryButton } from '../../components';
+import { FloatingLabelInput, PrimaryButton, Loader } from '../../components';
 import { apiHost, API_PATHS } from '../../constants';
 import { StorageService } from '../../utils/storage';
 import { getAuthHeaders } from '../../utils/common';
@@ -49,6 +49,15 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
     return () => clearTimeout(timer);
   }, [secondsLeft]);
 
+  const getVerifyErrorMessage = (err) => {
+    const data = err?.response?.data;
+    if (!data) return err?.message || 'Invalid or expired OTP';
+    const msg = data.message ?? data.error ?? data.msg;
+    if (Array.isArray(msg)) return msg[0] || 'Invalid or expired OTP';
+    if (typeof msg === 'string') return msg;
+    return err?.message || 'Invalid or expired OTP';
+  };
+
   const handleVerify = async () => {
     if (!isSixDigits) return;
     setError('');
@@ -68,11 +77,11 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
         }
         onVerified(token ?? null);
       } else {
-        setError(data.message || 'Invalid or expired OTP');
+        const msg = data.message ?? data.error ?? data.msg;
+        setError(typeof msg === 'string' ? msg : 'Invalid or expired OTP');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || err.message;
-      setError(msg || 'Invalid or expired OTP');
+      setError(getVerifyErrorMessage(err));
     } finally {
       setVerifying(false);
     }
@@ -100,9 +109,6 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
       : attemptsLeft === 0
       ? 'OTP Expired'
       : '';
-
-  const showInvalid =
-    error === 'Invalid OTP' && attemptsLeft > 0 && otp.length === 6;
 
   return (
     <SafeAreaView style={styles.loginRoot}>
@@ -137,9 +143,7 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
           error={
             attemptsLeft === 0
               ? 'OTP Expired'
-              : showInvalid
-              ? 'Invalid OTP'
-              : null
+              : error || null
           }
           helperText={!error && attemptsLeft > 0 ? 'Enter 6-digit OTP' : null}
           onFocus={() => setFocused(true)}
@@ -154,10 +158,10 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
             <Text
               style={[
                 styles.resendText,
-                (secondsLeft > 0 || sendingOtp) && { color: '#6b7280' },
+                secondsLeft > 0 && { color: '#6b7280' },
               ]}
             >
-              {sendingOtp ? 'Sending…' : timerText}
+              {timerText}
             </Text>
           </TouchableOpacity>
           {attemptsText ? (
@@ -166,7 +170,7 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
         </View>
 
         <PrimaryButton
-          title={verifying ? 'Verifying…' : 'Verify'}
+          title="Verify"
           onPress={handleVerify}
           disabled={!isSixDigits || verifying}
           showArrow={false}
@@ -176,6 +180,17 @@ export default function OtpScreen({ mobileNumber, onBackToLogin, onVerified }) {
           <Text style={styles.backToLoginText}>Change mobile number</Text>
         </TouchableOpacity>
       </View>
+
+      <Loader 
+        overlay 
+        visible={verifying} 
+        message="Verifying OTP..." 
+      />
+      <Loader 
+        overlay 
+        visible={sendingOtp} 
+        message="Resending OTP..." 
+      />
     </SafeAreaView>
   );
 }

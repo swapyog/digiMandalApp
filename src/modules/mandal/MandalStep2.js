@@ -3,7 +3,7 @@ import { Alert, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../styles/appStyles';
-import { PrimaryButton, FloatingLabelInput, SelectionModal } from '../../components';
+import { PrimaryButton, FloatingLabelInput, SelectionModal, Loader } from '../../components';
 import { apiHost, API_PATHS } from '../../constants';
 import { StorageService } from '../../utils/storage';
 import { getAuthHeaders } from '../../utils/common';
@@ -296,12 +296,14 @@ export default function MandalStep2({ onNext, onBack }) {
         </Modal>
 
         <PrimaryButton
-          title={submitting ? 'Saving…' : 'Next'}
+          title="Next"
           onPress={handleNext}
           disabled={submitting}
           style={{ marginTop: 24 }}
         />
       </ScrollView>
+
+      <Loader overlay visible={submitting} message="Saving Address..." />
 
       <SelectionModal
         visible={cityModalVisible}

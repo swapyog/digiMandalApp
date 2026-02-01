@@ -21,12 +21,13 @@ export default function FloatingLabelInput({
   containerStyle,
   rightIcon,
   rightIconName,
+  secureTextEntry = false,
 }) {
   const [focused, setFocused] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const showFloatingLabel = focused || value.length > 0;
-  const hasError = touched && error;
+  const hasError = !!error;
   const isValid = touched && !error && value.length > 0;
 
   const handleFocus = () => {
@@ -71,6 +72,7 @@ export default function FloatingLabelInput({
           multiline={multiline}
           editable={editable}
           autoFocus={autoFocus}
+          secureTextEntry={secureTextEntry}
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { pick, types, errorCodes, isErrorWithCode } from '@react-native-documents/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../styles/appStyles';
-import { PrimaryButton, FloatingDatePicker, FloatingLabelInput } from '../../components';
+import { PrimaryButton, FloatingDatePicker, FloatingLabelInput, Loader } from '../../components';
 import { apiHost, API_PATHS } from '../../constants';
 import { StorageService } from '../../utils/storage';
 import { getAuthHeaders } from '../../utils/common';
@@ -335,12 +335,14 @@ export default function MandalStep4({ onNext, onBack }) {
         </TouchableOpacity>
 
         <PrimaryButton
-          title={submitting ? 'Saving…' : 'Next'}
+          title="Next"
           onPress={handleNext}
           disabled={submitting}
           style={{ marginTop: 24 }}
         />
       </ScrollView>
+
+      <Loader overlay visible={submitting} message="Saving Registration..." />
 
       {/* File Picker Modal */}
       <Modal

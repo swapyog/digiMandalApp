@@ -9,4 +9,5 @@ export { default as JoinButton } from './JoinButton';
 export { default as ViewAllLink } from './ViewAllLink';
 export { default as NoticeCard } from './NoticeCard';
 export { default as PhotoUpload } from './PhotoUpload';
+export { default as Loader, PageLoader, ButtonLoader } from './Loader';
 

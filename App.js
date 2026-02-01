@@ -8,6 +8,8 @@ import {
   PermissionsScreen,
   LoginScreen,
   OtpScreen,
+  InterestsScreen,
+  BuildProfileScreen,
 } from './src/modules/auth';
 import {
   MandalStep1,
@@ -40,10 +42,10 @@ function App() {
             setMobileNumber(savedMobile);
             // Check last screen to resume from there
             const lastScreen = await StorageService.getLastScreen();
-            if (lastScreen && ['mandal-step-1', 'mandal-step-2', 'mandal-step-3', 'mandal-step-4', 'bank-details', 'mandal-created', 'homepage'].includes(lastScreen)) {
+            if (lastScreen && ['interests', 'build-profile', 'mandal-step-1', 'mandal-step-2', 'mandal-step-3', 'mandal-step-4', 'bank-details', 'mandal-created', 'homepage'].includes(lastScreen)) {
               nextScreen = lastScreen;
             } else {
-              nextScreen = 'mandal-step-1';
+              nextScreen = 'interests';
             }
           }
         } else {
@@ -147,6 +149,22 @@ function App() {
               await StorageService.setAccessToken(token);
             }
             await StorageService.setOtpVerified(true);
+            await StorageService.setLastScreen('interests');
+            setScreen('interests');
+          }}
+        />
+      )}
+      {screen === 'interests' && (
+        <InterestsScreen
+          onNext={async (selected) => {
+            await StorageService.setLastScreen('build-profile');
+            setScreen('build-profile');
+          }}
+        />
+      )}
+      {screen === 'build-profile' && (
+        <BuildProfileScreen
+          onNext={async (data) => {
             await StorageService.setLastScreen('mandal-step-1');
             setScreen('mandal-step-1');
           }}

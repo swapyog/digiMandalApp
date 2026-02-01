@@ -8,6 +8,7 @@ import {
   ToggleButton,
   PrimaryButton,
   SelectionModal,
+  Loader,
 } from '../../components';
 import { apiHost, API_PATHS } from '../../constants';
 import { StorageService } from '../../utils/storage';
@@ -211,11 +212,13 @@ export default function MandalStep1({ onNext, onBack }) {
         />
 
         <PrimaryButton
-          title={submitting ? 'Creating…' : 'Next'}
+          title="Next"
           onPress={handleNext}
           disabled={submitting}
         />
       </ScrollView>
+
+      <Loader overlay visible={submitting} message="Creating Mandal..." />
 
       <SelectionModal
         visible={sizeModalVisible}
