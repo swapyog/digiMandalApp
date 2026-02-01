@@ -3,9 +3,9 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { styles } from '../../../styles/appStyles';
 
-export default function ScreenHeader({ title, onBack, onMenuPress, showMenu = false, showArchive = false, onArchivePress, showDelete = false, onDeletePress, showEdit = false, onEditPress, showFilter = false, onFilterPress, rightElement }) {
+export default function ScreenHeader({ title, onBack, onMenuPress, showMenu = false, showArchive = false, onArchivePress, showDelete = false, onDeletePress, showEdit = false, onEditPress, showFilter = false, onFilterPress, rightElement, headerStyle }) {
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, headerStyle]}>
       <TouchableOpacity style={styles.headerBack} onPress={onBack}>
         <Icon name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>

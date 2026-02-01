@@ -17,6 +17,23 @@ import MembersScreen from './MembersScreen';
 import InviteMembersScreen from './InviteMembersScreen';
 import { AllNoticesScreen, CreateNoticeScreen, NoticePreviewScreen, ArchivedNoticesScreen } from '../noticeboard';
 import { AllIssuesScreen, RaiseIssueScreen, IssuePreviewScreen, IssueDetailScreen, ResolveIssueScreen } from '../issues';
+import { PhotoGalleryScreen, AddPhotosScreen } from '../gallery';
+import {
+  DonationScreen,
+  PayScreen,
+  SelectBankScreen,
+  AddAccountScreen,
+  AddCardScreen,
+  PaymentSuccessScreen,
+  ThankYouScreen,
+} from '../donation';
+import {
+  AllEventsScreen,
+  EventDetailScreen,
+  ApplyVolunteeringScreen,
+  EventThankYouScreen,
+  ScheduledEventsScreen,
+} from '../events';
 
 const PURPLE = '#7E48DC';
 const DARK_PURPLE = '#110723';
@@ -38,6 +55,27 @@ export default function MemberDashboard({ onBack }) {
   const [issueData, setIssueData] = useState(null);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [issueSuccessForNext, setIssueSuccessForNext] = useState(null);
+  const [photoGalleryVisible, setPhotoGalleryVisible] = useState(false);
+  const [addPhotosVisible, setAddPhotosVisible] = useState(false);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
+  const [gallerySuccessMessage, setGallerySuccessMessage] = useState('');
+  const [donationVisible, setDonationVisible] = useState(false);
+  const [payVisible, setPayVisible] = useState(false);
+  const [payAmount, setPayAmount] = useState(2000);
+  const [selectBankVisible, setSelectBankVisible] = useState(false);
+  const [addAccountVisible, setAddAccountVisible] = useState(false);
+  const [addCardVisible, setAddCardVisible] = useState(false);
+  const [paymentSuccessVisible, setPaymentSuccessVisible] = useState(false);
+  const [thankYouVisible, setThankYouVisible] = useState(false);
+  const [allEventsVisible, setAllEventsVisible] = useState(false);
+  const [eventDetailVisible, setEventDetailVisible] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [applyVolunteeringVisible, setApplyVolunteeringVisible] = useState(false);
+  const [eventThankYouVisible, setEventThankYouVisible] = useState(false);
+  const [eventPayVisible, setEventPayVisible] = useState(false);
+  const [eventPaymentSuccessVisible, setEventPaymentSuccessVisible] = useState(false);
+  const [eventPayAmount, setEventPayAmount] = useState(200);
+  const [scheduledEventsVisible, setScheduledEventsVisible] = useState(false);
 
   // Sample mandal data
   const mandalData = {
@@ -264,7 +302,10 @@ export default function MemberDashboard({ onBack }) {
     <View style={memberDashboardStyles.section}>
       <View style={memberDashboardStyles.sectionTitleRow}>
         <Text style={memberDashboardStyles.sectionTitle}>Donations</Text>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center' }}
+          onPress={() => setDonationVisible(true)}
+        >
           <Text style={memberDashboardStyles.sectionCountText}>2 New </Text>
           <Icon name="chevron-right" size={16} color={PURPLE} />
         </TouchableOpacity>
@@ -332,7 +373,10 @@ export default function MemberDashboard({ onBack }) {
     <View style={memberDashboardStyles.section}>
       <View style={memberDashboardStyles.sectionTitleRow}>
         <Text style={memberDashboardStyles.sectionTitle}>Events</Text>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center' }}
+          onPress={() => setAllEventsVisible(true)}
+        >
           <Text style={memberDashboardStyles.sectionCountText}>
             2 New • <Text style={memberDashboardStyles.sectionLinkText}>24</Text>
           </Text>
@@ -355,7 +399,10 @@ export default function MemberDashboard({ onBack }) {
     <View style={memberDashboardStyles.section}>
       <View style={memberDashboardStyles.sectionTitleRow}>
         <Text style={memberDashboardStyles.sectionTitle}>Photo Gallery</Text>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity
+          style={{ flexDirection: 'row', alignItems: 'center' }}
+          onPress={() => setPhotoGalleryVisible(true)}
+        >
           <Text style={memberDashboardStyles.sectionCountText}>
             2 New • <Text style={memberDashboardStyles.sectionLinkText}>214</Text>
           </Text>
@@ -370,7 +417,13 @@ export default function MemberDashboard({ onBack }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={memberDashboardStyles.galleryList}
       />
-      <AddButton text="Add Photos" />
+      <AddButton
+        text="Add Photos"
+        onPress={() => {
+          setSelectedAlbum(null);
+          setAddPhotosVisible(true);
+        }}
+      />
     </View>
   );
 
@@ -426,6 +479,214 @@ export default function MemberDashboard({ onBack }) {
       <MembersScreen
         onBack={() => setMembersScreenVisible(false)}
         associationName={mandalData.name}
+      />
+    );
+  }
+
+  if (thankYouVisible) {
+    return (
+      <ThankYouScreen
+        onDone={() => {
+          setThankYouVisible(false);
+          setPaymentSuccessVisible(false);
+          setPayVisible(false);
+          setDonationVisible(false);
+        }}
+      />
+    );
+  }
+
+  if (eventThankYouVisible) {
+    return (
+      <EventThankYouScreen
+        onDone={() => {
+          setEventThankYouVisible(false);
+          setEventPaymentSuccessVisible(false);
+          setEventPayVisible(false);
+          setEventDetailVisible(false);
+          setSelectedEvent(null);
+          setAllEventsVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (eventPaymentSuccessVisible) {
+    return (
+      <PaymentSuccessScreen
+        amount={eventPayAmount}
+        onDone={() => {
+          setEventPaymentSuccessVisible(false);
+          setEventThankYouVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (eventPayVisible) {
+    return (
+      <PayScreen
+        amount={eventPayAmount}
+        onBack={() => {
+          setEventPayVisible(false);
+          setEventDetailVisible(true);
+        }}
+        onSuccess={() => {
+          setEventPayVisible(false);
+          setEventPaymentSuccessVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (applyVolunteeringVisible) {
+    return (
+      <ApplyVolunteeringScreen
+        onBack={() => {
+          setApplyVolunteeringVisible(false);
+          setEventDetailVisible(true);
+        }}
+        onDone={() => {
+          setApplyVolunteeringVisible(false);
+          setEventThankYouVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (eventDetailVisible) {
+    return (
+      <EventDetailScreen
+        event={selectedEvent || {}}
+        onBack={() => {
+          setEventDetailVisible(false);
+          setSelectedEvent(null);
+          setAllEventsVisible(true);
+        }}
+        onVolunteer={() => {
+          setEventDetailVisible(false);
+          setApplyVolunteeringVisible(true);
+        }}
+        onJoin={() => {
+          setEventPayAmount(200);
+          setEventDetailVisible(false);
+          setEventPayVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (scheduledEventsVisible) {
+    return (
+      <ScheduledEventsScreen
+        onBack={() => setScheduledEventsVisible(false)}
+        onAdd={() => {}}
+        onEventPress={(event) => {
+          setSelectedEvent(event);
+          setScheduledEventsVisible(false);
+          setEventDetailVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (allEventsVisible) {
+    return (
+      <AllEventsScreen
+        onBack={() => setAllEventsVisible(false)}
+        onAddEvent={() => {}}
+        onEventPress={(event) => {
+          setSelectedEvent(event);
+          setAllEventsVisible(false);
+          setEventDetailVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (paymentSuccessVisible) {
+    return (
+      <PaymentSuccessScreen
+        amount={payAmount}
+        onDone={() => {
+          setPaymentSuccessVisible(false);
+          setThankYouVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (addCardVisible) {
+    return (
+      <AddCardScreen
+        amount={payAmount}
+        onBack={() => setAddCardVisible(false)}
+        onPay={() => {
+          setAddCardVisible(false);
+          setPaymentSuccessVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (addAccountVisible) {
+    return (
+      <AddAccountScreen
+        amount={payAmount}
+        onBack={() => setAddAccountVisible(false)}
+        onPay={() => {
+          setAddAccountVisible(false);
+          setPaymentSuccessVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (selectBankVisible) {
+    return (
+      <SelectBankScreen
+        onBack={() => setSelectBankVisible(false)}
+        onSelectBank={() => {
+          setSelectBankVisible(false);
+          setAddAccountVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (payVisible) {
+    return (
+      <PayScreen
+        amount={payAmount}
+        onBack={() => {
+          setPayVisible(false);
+          setDonationVisible(true);
+        }}
+        onSuccess={() => {
+          setPayVisible(false);
+          setPaymentSuccessVisible(true);
+        }}
+        onAddAccount={() => {
+          setPayVisible(false);
+          setSelectBankVisible(true);
+        }}
+        onAddCard={() => {
+          setPayVisible(false);
+          setAddCardVisible(true);
+        }}
+      />
+    );
+  }
+
+  if (donationVisible) {
+    return (
+      <DonationScreen
+        onBack={() => setDonationVisible(false)}
+        onPay={(amount) => {
+          setPayAmount(amount);
+          setDonationVisible(false);
+          setPayVisible(true);
+        }}
       />
     );
   }
@@ -513,6 +774,7 @@ export default function MemberDashboard({ onBack }) {
         onBack={() => {
           setIssueDetailVisible(false);
           setSelectedIssue(null);
+          setAllIssuesVisible(true);
         }}
         onResolve={() => {
           setIssueDetailVisible(false);
@@ -581,6 +843,42 @@ export default function MemberDashboard({ onBack }) {
     );
   }
 
+  if (addPhotosVisible) {
+    return (
+      <AddPhotosScreen
+        onBack={() => {
+          setAddPhotosVisible(false);
+          setSelectedAlbum(null);
+          setPhotoGalleryVisible(true);
+        }}
+        onDone={(data) => {
+          setAddPhotosVisible(false);
+          setSelectedAlbum(null);
+          setPhotoGalleryVisible(true);
+          setGallerySuccessMessage(`${data.photos.length} new photos added successfully!`);
+          setTimeout(() => setGallerySuccessMessage(''), 3000);
+        }}
+        album={selectedAlbum}
+      />
+    );
+  }
+
+  if (photoGalleryVisible) {
+    return (
+      <PhotoGalleryScreen
+        onBack={() => {
+          setPhotoGalleryVisible(false);
+          setGallerySuccessMessage('');
+        }}
+        onAddPhotos={(album) => {
+          setSelectedAlbum(album);
+          setPhotoGalleryVisible(false);
+          setAddPhotosVisible(true);
+        }}
+      />
+    );
+  }
+
   return (
     <SafeAreaView style={memberDashboardStyles.container}>
       {/* Main Content */}
@@ -594,6 +892,9 @@ export default function MemberDashboard({ onBack }) {
           onBack={onBack}
           quickActions={quickActions}
           onQuickActionPress={(action) => {
+            if (action.id === '1') setDonationVisible(true);
+            if (action.id === '2') setAllNoticesVisible(true);
+            if (action.id === '3') setAllEventsVisible(true);
             if (action.id === '4') setAllIssuesVisible(true);
           }}
         />

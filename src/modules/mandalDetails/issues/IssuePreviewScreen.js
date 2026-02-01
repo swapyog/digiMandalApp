@@ -49,15 +49,18 @@ export default function IssuePreviewScreen({
         <Text style={styles.body}>{description}</Text>
         {images.length > 0 && (
           <View style={styles.imagesSection}>
-            {images.slice(0, 2).map((img, i) => (
-              <View key={i} style={styles.imgWrap}>
-                {typeof img === 'string' ? (
-                  <Image source={{ uri: img }} style={styles.img} />
-                ) : (
-                  <View style={[styles.img, styles.imgPlaceholder]} />
-                )}
-              </View>
-            ))}
+            {images.slice(0, 2).map((img, i) => {
+              const uri = typeof img === 'string' ? img : img?.uri;
+              return (
+                <View key={i} style={styles.imgWrap}>
+                  {uri ? (
+                    <Image source={{ uri }} style={styles.img} />
+                  ) : (
+                    <View style={[styles.img, styles.imgPlaceholder]} />
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </ScrollView>

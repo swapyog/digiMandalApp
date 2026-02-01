@@ -38,25 +38,31 @@ export default function IssueCard({
             <IssueStatusTag status={status} />
           </View>
           <Text style={styles.reporter}>{reporterLine}</Text>
-          <Text style={styles.description} numberOfLines={3}>
-            {description}
-          </Text>
-          {onReadMorePress && (
-            <TouchableOpacity onPress={onReadMorePress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.readMore}>Read More</Text>
-            </TouchableOpacity>
-          )}
-          {images && images.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.gallery}
-              contentContainerStyle={styles.galleryContent}
-            >
-              {images.slice(0, 4).map((img, idx) => (
+
+        </View>
+      </View>
+      <View className="row">
+        <Text style={styles.description} numberOfLines={3}>
+          {description}
+        </Text>
+        {onReadMorePress && (
+          <TouchableOpacity onPress={onReadMorePress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.readMore}>Read More</Text>
+          </TouchableOpacity>
+        )}
+        {images && images.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.gallery}
+            contentContainerStyle={styles.galleryContent}
+          >
+              {images.slice(0, 4).map((img, idx) => {
+                const uri = typeof img === 'string' ? img : img?.uri;
+                return (
                 <View key={idx} style={styles.thumbWrap}>
-                  {typeof img === 'string' ? (
-                    <Image source={{ uri: img }} style={styles.thumb} />
+                  {uri ? (
+                    <Image source={{ uri }} style={styles.thumb} />
                   ) : (
                     <View style={[styles.thumb, styles.thumbPlaceholder]} />
                   )}
@@ -66,10 +72,10 @@ export default function IssueCard({
                     </View>
                   )}
                 </View>
-              ))}
-            </ScrollView>
-          )}
-        </View>
+              );
+              })}
+          </ScrollView>
+        )}
       </View>
     </TouchableOpacity>
   );

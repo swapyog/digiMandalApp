@@ -1,10 +1,14 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { homeStyles } from '../../../styles/homeStyles';
 
-export default function MandalProfileCard({ item }) {
+export default function MandalProfileCard({ item, onPress }) {
   return (
-    <View style={homeStyles.mandalProfileCard}>
+    <TouchableOpacity 
+      style={homeStyles.mandalProfileCard} 
+      onPress={() => onPress && onPress(item)}
+      activeOpacity={0.7}
+    >
       <View style={homeStyles.mandalProfileImageContainer}>
         <View
           style={[
@@ -33,7 +37,7 @@ export default function MandalProfileCard({ item }) {
       <Text style={homeStyles.mandalProfileName} numberOfLines={1}>
         {item.name}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 

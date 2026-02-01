@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import ScreenHeader from '../components/ScreenHeader';
 import ActionButton from '../components/ActionButton';
-import { FloatingLabelInput, FloatingLabelTextarea, FloatingDatePicker } from '../../../components';
+import { FloatingLabelInput, FloatingLabelTextarea, FloatingDatePicker, PhotoUpload } from '../../../components';
 
 const PURPLE = '#7b3cff';
 
@@ -92,26 +92,19 @@ export default function RaiseIssueScreen({ onBack, onNext, associationName = 'Va
                 <Text style={styles.chipName} numberOfLines={1}>{m.name}</Text>
               </View>
             ))}
-          </ScrollView>
+          </ScrollView> 
         </View>
 
-        <Text style={styles.sectionTitle}>Upload Photo</Text>
-        <Text style={styles.helperText}>Acceptable formats are jpeg, png up to 5MB</Text>
-        {photos.length > 0 ? (
-          photos.map((p, i) => (
-            <View key={i} style={styles.photoCard}>
-              <View style={styles.photoPlaceholder} />
-              <Text style={styles.photoName}>{p.name || 'Photo ' + (i + 1)}</Text>
-              <TouchableOpacity onPress={() => setPhotos((prev) => prev.filter((_, j) => j !== i))}>
-                <Icon name="close" size={20} color={PURPLE} />
-              </TouchableOpacity>
-            </View>
-          ))
-        ) : null}
-        <TouchableOpacity style={styles.uploadBox}>
-          <Icon name="file-upload" size={24} color={PURPLE} />
-          <Text style={styles.uploadText}>Upload Photos*</Text>
-        </TouchableOpacity>
+        <PhotoUpload
+          value={photos}
+          onChange={setPhotos}
+          title="Upload Photo"
+          helperText="Acceptable formats are jpeg, png up to 5MB"
+          uploadButtonText="Upload Photos*"
+          maxSizeMB={5}
+          allowMultiple={true}
+          accentColor={PURPLE}
+        />
       </ScrollView>
       <ActionButton title="Next" onPress={handleNext} disabled={!canNext} />
     </SafeAreaView>
@@ -119,10 +112,10 @@ export default function RaiseIssueScreen({ onBack, onNext, associationName = 'Va
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, paddingHorizontal: 16 },
+  container: { flex: 1, backgroundColor: '#FFFFFF', },
+  content: { flex: 1, paddingHorizontal: 16, marginTop: 16 },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 8 },
-  input: { marginBottom: 16 },
+  // input: { marginBottom: 16 },
   helperText: { fontSize: 12, color: '#6b7280', marginBottom: 12 },
   membersSection: { marginBottom: 24 },
   membersHeading: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 8 },
@@ -164,25 +157,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chipName: { fontSize: 12, color: '#374151', width: 70, textAlign: 'center' },
-  photoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  photoPlaceholder: { width: 48, height: 48, borderRadius: 8, backgroundColor: '#e5e7eb' },
-  photoName: { flex: 1, marginLeft: 12, fontSize: 14, color: '#111827' },
-  uploadBox: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: '#e3d8f7',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  uploadText: { fontSize: 14, fontWeight: '600', color: PURPLE, marginLeft: 8 },
 });

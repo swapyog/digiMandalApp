@@ -64,7 +64,12 @@ export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDa
     },
   ];
 
-  const renderMandalProfile = ({ item }) => <MandalProfileCard item={item} />;
+  const renderMandalProfile = ({ item }) => (
+    <MandalProfileCard 
+      item={item} 
+      onPress={() => onNavigateToMemberDashboard && onNavigateToMemberDashboard()} 
+    />
+  );
 
   const renderPost = ({ item }) => <PostCard item={item} />;
 
@@ -85,7 +90,7 @@ export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDa
           />
         </View>
         
-        <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
+        {/* <View style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
           <TouchableOpacity
             onPress={() => {
               if (onNavigateToAdminDashboard) {
@@ -105,27 +110,7 @@ export default function HomePage({ selectedTab, onTabChange, onNavigateToAdminDa
               Admin Dashboard
             </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity
-            onPress={() => {
-              if (onNavigateToMemberDashboard) {
-                onNavigateToMemberDashboard();
-              }
-            }}
-            activeOpacity={0.7}
-            style={{
-              padding: 16,
-              backgroundColor: '#F6F2FC',
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: '#E5E7EB',
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>
-              Members Dashboard
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Posts Feed */}
         <View style={homeStyles.postsFeed}>
